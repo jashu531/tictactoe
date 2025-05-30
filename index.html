@@ -648,7 +648,7 @@
 
     // Starts or restarts a local game
     function startGameMode(mode) {
-        console.log(`Local: Starting game mode: ${mode}`);
+        console.log(`Local: startGameMode called with mode: ${mode}`); // Log start of function
 
         // --- Clean up potential lingering state (no online state anymore) ---
         // Any old local game state will be overwritten below.
@@ -656,6 +656,7 @@
         // --- Set up local game state ---
         local_gameMode = mode;
         sessionStorage.setItem('gameMode', mode); // Save mode to session storage
+        console.log(`Local: local_gameMode set to ${local_gameMode}`); // Log mode state
 
         // If starting bot mode, get difficulty from dropdown and save
          if (mode === 'bot' && botDifficultyDropdown) {
@@ -687,21 +688,28 @@
 
 
         // --- Update UI for game start ---
+        if (gameControlsElement) gameControlsElement.style.display = 'none';
+        console.log("Local: Hiding game controls."); // Log UI change
+
+        if(botDifficultySelection) botDifficultySelection.style.display = 'none';
+        console.log("Local: Hiding bot difficulty selection."); // Log UI change
+
+
         if (boardElement) {
             boardElement.style.display = 'grid'; // SHOW the board
+             console.log("Local: Showing board element."); // Log UI change
         } else {
              console.error("Board element not found when starting game mode!");
         }
 
         renderBoard(local_cells); // Render the fresh board
+        console.log("Local: Called renderBoard."); // Log function call
 
-        // Hide controls and difficulty selection
-        if (gameControlsElement) gameControlsElement.style.display = 'none';
-        if(botDifficultySelection) botDifficultySelection.style.display = 'none';
 
         // Ensure game end buttons container is hidden at the start of a new game
          if (gameEndButtonsContainer) {
              gameEndButtonsContainer.style.display = 'none';
+              console.log("Local: Hiding game end buttons container."); // Log UI change
          }
          // Ensure restart button text is correct for local game
          if (restartButton) {
@@ -711,12 +719,17 @@
 
 
          document.body.classList.add('game-started'); // Indicate game is active
+         console.log("Local: Added 'game-started' class to body."); // Log class change
+
 
         // Set initial status message using the helper function
         updateLocalGameStatus();
+        console.log("Local: Called updateLocalGameStatus."); // Log function call
+
 
         // Update clickability based on initial state (X's turn, human)
         enableLocalBoardClicking(); // Enable clicks for the first human player (X)
+        console.log("Local: Called enableLocalBoardClicking."); // Log function call
 
         // If starting a bot game and bot goes first (O), initiate bot move
         // In this game X always starts, so no bot move here at the very beginning.
@@ -760,6 +773,7 @@
              cellElement.classList.remove('clickable'); // Remove clickable style
             cellElement.style.pointerEvents = 'none'; // Ensure element pointer events are off
              playMoveSound(); // Play move sound after successful placement
+             console.log(`Local: Updated cell ${index} visually.`); // Log visual update
         } else {
             console.error("Cell element not found for index", index, "during makeLocalMove.");
         }
@@ -768,12 +782,15 @@
         // Check for win or draw AFTER the move has been applied
         winningCombination = null; // Reset before checking
         const winnerInfo = checkForWinner(playerSymbol, local_cells);
+        console.log(`Local: checkForWinner result:`, winnerInfo); // Log winner check result
+
 
         if (winnerInfo) {
             // Game over - Winner
             local_gameOver = true;
             winningCombination = winnerInfo.combination;
             highlightWinningCells(winningCombination); // Highlight winning cells
+            console.log(`Local: Game Over - Winner: ${winnerInfo.player}`); // Log game end type
 
              // Play win or loss sound based on who won relative to the human player (X)
              if (winnerInfo.player === PLAYER_X) { // Human (X) won
@@ -786,20 +803,24 @@
         } else if (!local_cells.includes(null)) {
             // Game over - Draw (No winner and no empty cells)
             local_gameOver = true;
+            console.log("Local: Game Over - Draw."); // Log game end type
             // Draw sound removed as per requested files
 
         }
 
         // Update status message and switch turn ONLY if game is NOT over
         updateLocalGameStatus(); // Update status message based on new state
+        console.log("Local: Called updateLocalGameStatus."); // Log function call
+
 
         if (local_gameOver) {
              local_currentTurnSymbol = ''; // No one's turn anymore
+             console.log("Local: local_gameOver is true. Setting currentTurnSymbol to ''."); // Log state change
 
              // Show the game end buttons container
              if (gameEndButtonsContainer) {
                  gameEndButtonsContainer.style.display = 'flex';
-                  console.log("Local: makeLocalMove: Game over, showing gameEndButtonsContainer.");
+                  console.log("Local: makeLocalMove: Game over, showing gameEndButtonsContainer."); // Log UI change
              }
              // Restart button text is already "Restart Game!" for local mode
 
@@ -807,9 +828,11 @@
         } else {
             // Game is not over, switch turns
             local_currentTurnSymbol = playerSymbol === PLAYER_X ? PLAYER_O : PLAYER_X;
+             console.log(`Local: Game not over. Switching turn to ${local_currentTurnSymbol}.`); // Log state change
 
             // If it's the bot's turn (and game is not over), initiate bot move
             if (local_gameMode === 'bot' && local_currentTurnSymbol === PLAYER_O) {
+                 console.log("Local: It's bot's turn, initiating botMove."); // Log bot turn
                  // Bot's turn - status message is already set to "thinking..." by updateLocalGameStatus
                  // enableLocalBoardClicking() called below will disable human clicks
                  // Call botMove with a slight delay
@@ -820,6 +843,7 @@
          // Always re-evaluate clickability after a move, based on the NEW state (turn, game over)
          // This enables clicks for the next human player or disables them for the bot/game over
          enableLocalBoardClicking();
+         console.log("Local: Called enableLocalBoardClicking after move."); // Log function call
     }
 
 
@@ -832,7 +856,7 @@
              console.error("Local Click: Invalid cell index from data attribute:", event.target.dataset.index);
              return;
          }
-         console.log(`Local Click: Cell ${index} clicked.`);
+         console.log(`Local Click: Cell ${index} clicked.`); // Log click event
 
          // Primary checks: is game over? is cell taken?
          if (local_gameOver || local_cells[index] !== null) {
@@ -881,6 +905,7 @@
 
     // Helper to update local game status message based on current state
     function updateLocalGameStatus() {
+         console.log("updateLocalGameStatus called."); // Log function call
          if (!statusMessageElement) return;
 
          if (local_gameOver) {
@@ -914,6 +939,7 @@
                    statusMessageElement.textContent = "Select a mode to start your funky game!";
               }
          }
+         console.log("Status message set to:", statusMessageElement.textContent); // Log final status text
     }
 
 
@@ -921,6 +947,7 @@
     // Only local_gameMode exists now, so this function is the primary click controller
     function enableLocalBoardClicking() {
          // Removed mm_roomId check
+         console.log("enableLocalBoardClicking called."); // Log function call
 
          if (!boardElement) {
              console.warn("enableLocalBoardClicking: Board element not found.");
@@ -934,7 +961,7 @@
          const canHumanClickOnBoardContainer = local_gameMode !== '' && !local_gameOver && (local_gameMode === 'player' || (local_gameMode === 'bot' && local_currentTurnSymbol === PLAYER_X));
 
          boardElement.style.pointerEvents = canHumanClickOnBoardContainer ? 'auto' : 'none';
-         // console.log(`Local: Setting board pointer-events for human clicks to ${canHumanClickOnBoardContainer ? 'auto' : 'none'}. State: Mode=${local_gameMode || 'none'}, Turn=${local_currentTurnSymbol || 'none'}, GameOver=${local_gameOver}`); // Suppress logging
+          console.log(`Local: Setting board pointer-events for human clicks to ${canHumanClickOnBoardContainer ? 'auto' : 'none'}. State: Mode=${local_gameMode || 'none'}, Turn=${local_currentTurnSymbol || 'none'}, GameOver=${local_gameOver}`); // Log clickability state
 
 
          // Update the 'clickable' class on individual cells for visual feedback (hover effect)
@@ -953,6 +980,7 @@
                    cell.style.pointerEvents = 'none'; // Ensure individual cell blocks clicks if taken or board disabled
                }
          });
+         console.log("Local: Updated cell clickable classes/pointer-events."); // Log cell updates
     }
 
 
@@ -969,7 +997,7 @@
               return;
          }
 
-         console.log(`Local Bot: Finding move for level: ${local_botDifficulty}...`);
+         console.log(`Local Bot: Finding move for level: ${local_botDifficulty}...`); // Log bot thinking step
          // Human clicks were disabled by enableLocalBoardClicking when O's turn started
 
          let moveIndex = -1; // Default invalid move
@@ -1021,7 +1049,7 @@
          // After determining the move, perform validation again before making it
           // Check if game is NOT over, the target cell is still empty, AND it's still O's turn
          if (moveIndex !== -1 && local_cells[moveIndex] === null && local_currentTurnSymbol === PLAYER_O && !local_gameOver) {
-             console.log("Local Bot: Making move at index", moveIndex);
+             console.log("Local Bot: Making move at index", moveIndex); // Log move
              // The makeLocalMove function handles updating UI, switching turn, checking for end game, and calling enableLocalBoardClicking
              makeLocalMove(moveIndex, PLAYER_O);
          } else {
@@ -1073,7 +1101,7 @@
          let bestScore = -Infinity; // Bot wants to maximize score
          let bestMoveIndex = -1;
 
-         console.log("Local Bot (Hard/Minimax): Starting root search...");
+         // console.log("Local Bot (Hard/Minimax): Starting root search..."); // Avoid spamming console
 
          // Shuffle available cells for some variety on equally scored moves at the root
          shuffleArray(availableCells);
@@ -1294,16 +1322,16 @@
 
     // Initiates a restart for the local game mode or resets to selection
     function requestRestartGame() {
-        console.log("requestRestartGame called.");
+        console.log("requestRestartGame called (Restart Game button clicked)."); // Log button click
 
         // Logic for restarting local game mode
         if (local_gameMode) {
-            console.log(`Local: Restarting mode: ${local_gameMode}`);
+            console.log(`Local: Restarting mode: ${local_gameMode}`); // Log which mode is restarting
             // Clear winning combination and re-call startGameMode with the current mode
             winningCombination = null; // Clear highlight
-            startGameMode(local_gameMode);
+            startGameMode(local_gameMode); // This will reset state and UI
         } else {
-             console.warn("Local: Restart button clicked, but no local game mode detected. Resetting to mode selection.");
+             console.warn("Local: Restart button clicked, but no local game mode detected. Resetting to mode selection."); // Log unexpected state
              // Fallback: if restart is somehow clicked when in the selection state, just reset to selection
              resetToModeSelection();
         }
@@ -1311,9 +1339,9 @@
 
 
      // Central function to reset the UI and state to the mode selection screen
-     // Used on initial load if no game is active, or when exiting a local game via a "Back to Menu" button or fallback restart.
+     // Used on initial load if no game is active, or when exiting a local game via the "Back to Menu" button or fallback restart.
      function resetToModeSelection() {
-          console.log("Resetting game to mode selection screen.");
+          console.log("resetToModeSelection called."); // Log function call
 
           // Clear local game state
           local_cells.fill(null);
@@ -1321,32 +1349,42 @@
           local_currentTurnSymbol = PLAYER_X; // Reset turn symbol (though not used in this state)
           winningCombination = null; // Clear winning highlight
           local_gameMode = ''; // Explicitly set mode to none for selection screen
+          console.log("Local: Resetting game state variables."); // Log state reset
 
           // Clear local game session storage
           sessionStorage.removeItem('gameMode');
           sessionStorage.removeItem('botDifficulty');
+          console.log("Local: Cleared session storage (gameMode, botDifficulty)."); // Log session storage clear
 
-          // Removed cleaning up online state
 
           // --- Update UI to show selection screen ---
           if(gameControlsElement) gameControlsElement.style.display = 'flex'; // Show mode selection buttons
+          console.log("Local: Showing game controls."); // Log UI change
+
           // Show bot difficulty selection as it's part of the local mode selection
           if(botDifficultySelection) botDifficultySelection.style.display = 'flex';
+          console.log("Local: Showing bot difficulty selection."); // Log UI change
+
           if(gameEndButtonsContainer) gameEndButtonsContainer.style.display = 'none'; // Hide end buttons
+          console.log("Local: Hiding game end buttons container."); // Log UI change
+
 
            // Crucially: HIDE THE BOARD when showing the controls
            if(boardElement) {
                boardElement.style.display = 'none';
-               console.log("Reset: Hiding board element.");
+               console.log("Local: Hiding board element."); // Log UI change
            } else {
-                console.error("Reset: Board element not found!");
+                console.error("Board element not found!");
            }
 
           // Update status message using the helper function
           updateLocalGameStatus(); // This will set the "Select a mode..." message
+          console.log("Local: Called updateLocalGameStatus after reset."); // Log function call
+
 
           // Remove body class indicating game is active
           document.body.classList.remove('game-started');
+          console.log("Local: Removed 'game-started' class from body."); // Log class change
 
            // Reset dropdown value visually (optional)
            if (botDifficultyDropdown) botDifficultyDropdown.value = 'easy'; // Or the default you prefer
