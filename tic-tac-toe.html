@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gamyday TicTacToe - Funky!</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Bangers&display=swap" rel="stylesheet">
+
+  <!-- Removed Socket.IO client library - it's not needed for local/bot modes -->
+  <!-- <script src="/socket.io/socket.io.js"></script> -->
+
+  <style>
+    /* --- General Styles --- */
+    body {
+      background: linear-gradient(135deg, #f3ec78, #af4261); /* Funky gradient background */
+      color: #333;
+      font-family: 'Segoe UI', 'Arial', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center; /* Center content vertically by default */
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto; /* Allow scrolling if content exceeds viewport */
+      animation: backgroundGradient 10s ease infinite alternate; /* Animated background */
+    }
+
+    @keyframes backgroundGradient {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 100% 50%; }
+    }
+
+     /* Adjust body alignment when game is started */
+     body.game-started {
+         justify-content: flex-start; /* Align items to top when game is started */
+         padding-top: 40px; /* Add some space at the top */
+         padding-bottom: 40px; /* Add some space at the bottom */
+     }
+
+
+    /* --- Game Container --- */
+    .game-container {
+      background-color: rgba(255, 255, 255, 0.95); /* Slightly transparent white background */
+      padding: 30px; /* Increased padding */
+      border-radius: 20px; /* More rounded corners */
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); /* Stronger shadow */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 95%; /* Limit max width */
+      width: auto; /* Adjust width based on content */
+      position: relative; /* For potential positioning of elements */
+      border: 5px solid #ff6f00; /* Adding a border */
+    }
+
+    /* --- Branding --- */
+    .branding {
+      font-size: 3em; /* Larger font size */
+      font-weight: bold;
+      color: #1db954; /* Keep green */
+      margin-bottom: 20px;
+      align-self: center; /* Center branding */
+      font-family: 'Bangers', cursive;
+      letter-spacing: 2px; /* More spacing */
+      text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.1); /* Add subtle text shadow */
+    }
+    .branding span {
+        color: #ff6f00; /* Keep orange */
+        text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.1); /* Add subtle text shadow */
+    }
+
+    /* --- Status Message --- */
+    .status-message {
+      text-align: center;
+      font-size: 1.6rem; /* Larger font size */
+      color: #444;
+      margin: 15px 0 20px 0; /* Adjusted margins */
+      min-height: 1.8em; /* Ensure height */
+      font-weight: bold;
+      font-family: 'Permanent Marker', cursive;
+      padding: 10px 20px; /* Add padding */
+      border: 2px dashed #ff6f00; /* Dashed border */
+      background-color: #fff9c4; /* Light yellow background */
+      border-radius: 8px;
+      box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    /* --- Game Controls & Buttons --- */
+    .game-controls {
+      margin-bottom: 25px; /* Increased margin */
+      display: flex;
+      flex-direction: column; /* Stack controls vertically */
+      align-items: center;
+      gap: 15px; /* Increased gap */
+      width: 100%; /* Take full width for stacking */
+    }
+
+    .game-controls button, .restart-btn, .close-btn, .sound-toggle-btn {
+      padding: 12px 25px; /* Increased padding */
+      font-size: 1.1rem; /* Slightly larger font */
+      background-color: #1db954; /* Green background */
+      color: white;
+      border: none;
+      border-radius: 10px; /* More rounded corners */
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      font-family: 'Bangers', cursive;
+      letter-spacing: 1px; /* Increased spacing */
+      text-transform: uppercase; /* Uppercase text */
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow */
+      width: 100%; /* Make buttons take full width of controls container */
+      max-width: 300px; /* Max width for buttons */
+    }
+
+    .game-controls button:hover, .restart-btn:hover, .close-btn:hover, .sound-toggle-btn:hover {
+      background-color: #ff6f00; /* Orange on hover */
+      transform: translateY(-3px) scale(1.05); /* Lift and slightly scale */
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Stronger shadow on hover */
+    }
+    .game-controls button:active, .restart-btn:active, .close-btn:active, .sound-toggle-btn:active {
+      transform: translateY(-1px) scale(1.02); /* Slightly lower and less scale on click */
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+    }
+    .game-controls button:disabled, .sound-toggle-btn:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+      opacity: 0.7;
+    }
+
+    .close-btn {
+        background-color: #e74c3c; /* Reddish close button */
+    }
+     .close-btn:hover {
+         background-color: #c0392b; /* Darker red on hover */
+         transform: translateY(-3px) scale(1.05);
+     }
+     .close-btn:active {
+        transform: translateY(-1px) scale(1.02);
+     }
+
+     .sound-toggle-btn {
+        background-color: #3498db; /* Blueish toggle button */
+         margin-top: 10px; /* Add some space above it */
+     }
+      .sound-toggle-btn:hover {
+          background-color: #2980b9; /* Darker blue */
+      }
+
+
+    /* Bot Difficulty Selection */
+    .difficulty-selection {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        margin-top: 10px;
+        width: 100%;
+        max-width: 300px; /* Match button max-width */
+    }
+
+    .difficulty-selection label {
+        font-weight: bold;
+        font-family: 'Bangers', cursive;
+        font-size: 1.2rem;
+        color: #333;
+    }
+
+    .difficulty-selection select {
+        padding: 10px;
+        font-size: 1rem;
+        border-radius: 8px;
+        border: 2px solid #1db954;
+        font-family: 'Segoe UI', 'Arial', sans-serif;
+        background-color: #fff;
+        cursor: pointer;
+        transition: border-color 0.3s ease;
+        width: 100%; /* Match button width */
+    }
+
+    .difficulty-selection select:hover {
+        border-color: #ff6f00;
+    }
+
+
+    /* --- Game Board --- */
+    .board {
+      display: grid;
+      grid-template-columns: repeat(7, 55px); /* Slightly larger cells */
+      grid-template-rows: repeat(7, 55px); /* Slightly larger cells */
+      gap: 6px; /* Increased gap */
+      background-color: #4a235a; /* Dark purple background */
+      padding: 10px; /* Increased padding */
+      border: 5px solid #f1c40f; /* Yellow border */
+      border-radius: 15px; /* More rounded corners */
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); /* Add shadow */
+      /* Initially hidden, JS shows it */
+      display: none; /* <-- Hide by default */
+    }
+
+    /* Responsive adjustment for smaller screens */
+    @media (max-width: 420px) {
+         .board {
+             grid-template-columns: repeat(7, 40px); /* Smaller cells */
+             grid-template-rows: repeat(7, 40px); /* Smaller cells */
+             gap: 4px;
+             padding: 5px;
+         }
+         .cell {
+             width: 40px;
+             height: 40px;
+             font-size: 1.2rem;
+         }
+         .branding {
+            font-size: 2em;
+         }
+         .status-message {
+            font-size: 1.2rem;
+            padding: 8px 15px;
+         }
+         .game-controls button, .restart-btn, .close-btn, .sound-toggle-btn {
+             font-size: 0.9rem;
+             padding: 10px 15px;
+         }
+         .game-container {
+             padding: 20px;
+         }
+          .difficulty-selection {
+             max-width: 250px; /* Adjust for smaller screen */
+         }
+          .game-controls button, .restart-btn, .close-btn, .sound-toggle-btn {
+             max-width: 250px; /* Adjust for smaller screen */
+          }
+    }
+
+
+    /* --- Board Cells --- */
+    .cell {
+      width: 55px; /* Match grid size */
+      height: 55px; /* Match grid size */
+      background-color: #3498db; /* Vibrant blue */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2.5rem; /* Larger symbol font */
+      font-weight: bold;
+      color: #ffffff; /* White symbol color */
+      font-family: 'Permanent Marker', cursive;
+      line-height: 1;
+      user-select: none;
+      border-radius: 8px; /* Rounded cell corners */
+      transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease; /* Add transitions */
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.2); /* Inner shadow */
+       pointer-events: none; /* Default state is not clickable */
+    }
+
+    .cell.clickable {
+        cursor: pointer;
+        pointer-events: auto; /* Enable pointer events when clickable */
+    }
+
+    .cell.clickable:hover {
+        background-color: #5dade2; /* Lighter blue on hover */
+        transform: scale(1.05); /* Slight scale on hover */
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.5), inset 0 2px 5px rgba(0,0,0,0.2); /* Glow effect + inner shadow */
+    }
+     .cell.clickable:active {
+         transform: scale(0.98); /* Slight press effect */
+         box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
+     }
+
+
+    .cell.taken {
+      cursor: not-allowed;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.3); /* Stronger inner shadow when taken */
+       pointer-events: none; /* Ensure taken cells are not clickable */
+    }
+
+    /* Animation for placing X or O */
+    .cell.x, .cell.o {
+        animation: popIn 0.3s ease-out forwards; /* Pop in animation */
+        text-shadow:
+           -2px -2px 0 #eee,
+            2px -2px 0 #eee,
+            -2px 2px 0 #eee,
+             2px 2px 0 #eee; /* Lighter text shadow */
+    }
+
+    @keyframes popIn {
+        0% { transform: scale(0.5); opacity: 0; }
+        70% { transform: scale(1.1); opacity: 1; }
+        100% { transform: scale(1); }
+    }
+
+    .cell.x {
+      color: #00008B; /* Dark blue X */
+       background-color: #f1c40f; /* Yellow background for X */
+    }
+
+    .cell.o {
+      color: #FFA500; /* Orange O */
+      background-color: #e74c3c; /* Red background for O */
+    }
+
+    /* Winning cell styles */
+    .cell.winning {
+      background-color: #2ecc71 !important; /* Vibrant green highlight */
+      color: #fff !important; /* White text */
+      text-shadow:
+           -2px -2px 0 #333,
+            2px -2px 0 #333,
+            -2px 2px 0 #333,
+             2px 2px 0 #333; /* Darker shadow for contrast */
+      filter: none;
+      animation: pulseWin 1s infinite alternate; /* Pulsing animation */
+    }
+
+    @keyframes pulseWin {
+        0% { transform: scale(1); box-shadow: 0 0 10px #2ecc71; }
+        100% { transform: scale(1.05); box-shadow: 0 0 20px #2ecc71; }
+    }
+
+
+    /* Styles for buttons shown after game over */
+    .game-end-buttons {
+        display: flex;
+        gap: 15px; /* Increased gap */
+        margin-top: 25px; /* Increased margin */
+        justify-content: center;
+        flex-wrap: wrap; /* Allow wrapping */
+        /* Initially hidden, JS shows it */
+        display: none; /* <-- Hide by default */
+    }
+
+    .restart-btn, .close-btn {
+      display: block;
+      width: auto;
+      min-width: 180px; /* Slightly wider buttons */
+    }
+
+     /* Hide audio elements visually */
+    .sound-effects {
+        display: none;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <div class="branding">Gamyday <span>Funky Game!</span></div>
+    <div class="status-message" id="statusMessage">Loading Game...</div>
+
+    <!-- Player vs Player (Local) and Player vs Bot buttons -->
+    <div class="game-controls" id="gameControls">
+      <button onclick="startGameMode('player')">Player vs Player (Local)</button>
+
+      <div class="difficulty-selection" id="botDifficultySelection">
+           <label for="botDifficulty">Choose Bot Funky Level:</label>
+           <select id="botDifficulty">
+               <option value="easy">Easy Peasy</option>
+               <option value="medium">Getting Funky</option>
+               <option value="hard">Super Funky!</option>
+           </select>
+      </div>
+      <button onclick="startGameMode('bot')">Play Funky Bot!</Button>
+
+       <!-- Removed Online Play Button -->
+       <!-- <button onclick="redirectToLobby()">Play Online</button> -->
+    </div>
+
+    <!-- The board will be generated and managed by JavaScript -->
+    <div class="board" id="board"></div>
+
+    <div class="game-end-buttons" id="gameEndButtons">
+        <!-- Text and click handler set by JS based on game mode -->
+        <button class="restart-btn" id="restartButton">Restart Game!</button>
+        <button class="close-btn" id="closeWindowButton">Exit Game</button>
+    </div>
+
+     <!-- Added Sound Toggle Button -->
+     <button id="soundToggleButton" class="sound-toggle-btn">Turn Sound Off</button>
+
+
+     <!-- Hidden audio elements for sound effects -->
+     <div class="sound-effects">
+         <!-- Using your specified file paths -->
+         <audio id="moveSound" src="/sounds/playing.wav" preload="auto"></audio>
+         <audio id="winSound" src="/sounds/win.wav" preload="auto"></audio>
+         <audio id="lossSound" src="/sounds/lossing.wav" preload="auto"></audio>
+         <!-- Draw sound removed as per your file list -->
+     </div>
+
+  </div>
+
+  <script>
+    console.log('Tic-Tac-Toe Script: Starting execution.');
+
+    // Get references to HTML elements
+    const boardElement = document.getElementById('board');
+    const statusMessageElement = document.getElementById('statusMessage');
+    const gameControlsElement = document.getElementById('gameControls');
+    const restartButton = document.getElementById('restartButton');
+    const closeWindowButton = document.getElementById('closeWindowButton');
+    const gameEndButtonsContainer = document.getElementById('gameEndButtons');
+    const botDifficultySelection = document.getElementById('botDifficultySelection'); // New element reference
+    const botDifficultyDropdown = document.getElementById('botDifficulty'); // New element reference
+    const soundToggleButton = document.getElementById('soundToggleButton'); // New element reference
+
+
+     // Get references to audio elements
+    const moveSound = document.getElementById('moveSound');
+    const winSound = document.getElementById('winSound');
+    const lossSound = document.getElementById('lossSound'); // Reference for the loss sound
+
+
+    // Game Constants
+    const N = 7; // Board size (7x7 grid)
+    const WIN_LENGTH = 4; // Number of pieces in a row to win
+    const PLAYER_X = 'X'; // Human player in bot mode, Player 1 in PvP
+    const PLAYER_O = 'O'; // Bot player in bot mode, Player 2 in PvP
+    // MINIMAX CONSTANTS (Adjust MAX_DEPTH for bot performance)
+    const MAX_DEPTH = 3; // How many moves ahead the bot looks (higher = smarter, slower)
+    const SCORES = { // Heuristic scores for board evaluation
+        win: 1000,
+        threeInARow: 50, // Potential for N-1 in a row
+        twoInARow: 10,   // Potential for N-2 in a row
+        centerPreference: 5, // Optional: prefer center cells
+        lose: -1000, // Negative of win score
+        draw: 0
+    };
+
+
+    // Removed Matchmaking (Online) Game State variables
+    // let socket;
+    // let mm_roomId = null;
+    // let mm_mySymbol = null;
+    // let mm_currentBoardState = Array(N * N).fill(null);
+    // let mm_isMyTurn = false;
+    // let mm_onlineGameOver = false;
+    // let mm_winner = null;
+    // let mm_isDraw = false;
+
+
+    // Local Game State
+    let local_cells = Array(N * N).fill(null); // Board state for local games
+    let local_currentTurnSymbol = PLAYER_X; // 'X' or 'O' for the current turn in local game
+    let local_gameOver = false; // Boolean indicating if the local game has ended
+    let local_gameMode = ''; // '', 'player' (PvP), 'bot' (PvBot)
+    let local_botDifficulty = 'easy'; // Default bot difficulty
+    let winningCombination = null; // Array of indices for winning cells (used by local modes for highlighting)
+
+    // Sound State
+    // Load sound preference from localStorage, default to true
+    let isSoundOn = localStorage.getItem('isSoundOn');
+    if (isSoundOn === null) { // First time user visits
+        isSoundOn = true;
+        localStorage.setItem('isSoundOn', 'true');
+    } else {
+        isSoundOn = (isSoundOn === 'true'); // Convert string "true"/"false" to boolean
+    }
+
+
+    // --- Sound Functions ---
+    // Added a check for readyState before attempting to play
+    // Modified to check the global `isSoundOn` state
+     function playSound(soundElement) {
+         if (!isSoundOn || !soundElement) {
+              // console.log("Sound playback skipped: isSoundOn=", isSoundOn, "element:", soundElement); // Optional debug
+              return; // Exit if sound is off or element is null
+         }
+         // Check if the sound element is ready to play at least some data
+         // HTMLMediaElement.HAVE_METADATA (1), HAVE_CURRENT_DATA (2), HAVE_FUTURE_DATA (3), HAVE_ENOUGH_DATA (4)
+         if (soundElement.readyState >= 2) {
+             soundElement.currentTime = 0; // Rewind to the start
+             // Play returns a Promise, catch potential errors (like browser blocking)
+             soundElement.play().catch(e => console.warn("Sound play failed:", e));
+         } else {
+              // console.warn("Sound element not ready or not element (state: " + (soundElement ? soundElement.readyState : 'N/A') + ")", soundElement); // Optional logging
+              // Could potentially add an event listener here to play when ready, but complex for rapid sounds
+         }
+     }
+
+     function playMoveSound() { playSound(moveSound); }
+     function playWinSound() { playSound(winSound); }
+     function playLossSound() { playSound(lossSound); }
+
+
+     // Function to handle toggling sound
+     function toggleSound() {
+         isSoundOn = !isSoundOn; // Toggle the state
+         localStorage.setItem('isSoundOn', isSoundOn.toString()); // Save to localStorage
+
+         // Update button text
+         if (soundToggleButton) {
+             soundToggleButton.textContent = isSoundOn ? 'Turn Sound Off' : 'Turn Sound On';
+         }
+
+         console.log("Sound is now:", isSoundOn ? "On" : "Off");
+
+         // If sound is just turned ON, attempt a silent play unlock
+         // This helps browsers allow audio playback triggered by non-direct user gestures later.
+         // Only attempt if audio element exists and sound is now ON
+          if (isSoundOn && moveSound) {
+               console.log("Attempting silent play unlock after turning sound ON...");
+               // Temporarily set volume very low
+               moveSound.volume = 0.01;
+              moveSound.play()
+                  .then(() => {
+                       // If successful, restore volume and maybe pause it instantly
+                       console.log("Silent play unlock attempt successful.");
+                       moveSound.volume = 1;
+                       moveSound.pause(); // Pause immediately as it was just for unlocking
+                       moveSound.currentTime = 0; // Rewind
+                   })
+                  .catch(e => console.warn("Silent play unlock attempt failed from mode button click (unexpected after click):", e));
+          } else if (!isSoundOn) {
+              // If sound is turned OFF, attempt to pause any currently playing sounds (though sounds are short)
+              if (moveSound) moveSound.pause();
+              if (winSound) winSound.pause();
+              if (lossSound) lossSound.pause();
+          }
+     }
+
+
+    // --- Initialize Game on DOM Ready ---
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOMContentLoaded fired.');
+
+        // Removed check for online game data (mm_roomId, mm_mySymbol)
+        // mm_roomId = sessionStorage.getItem('roomId');
+        // mm_mySymbol = sessionStorage.getItem('mySymbol');
+
+        // Retrieve gameMode and botDifficulty from session storage for continuity in local games
+        local_gameMode = sessionStorage.getItem('gameMode') || '';
+        local_botDifficulty = sessionStorage.getItem('botDifficulty') || 'easy'; // Load saved difficulty
+
+        // Set the dropdown value based on loaded difficulty (applies to mode selection state)
+        if (botDifficultyDropdown) {
+             botDifficultyDropdown.value = local_botDifficulty;
+             // Add event listener to update local_botDifficulty when user changes dropdown value
+              botDifficultyDropdown.addEventListener('change', (event) => {
+                   local_botDifficulty = event.target.value;
+                   sessionStorage.setItem('botDifficulty', local_botDifficulty); // Save change
+                   console.log("Bot difficulty updated via dropdown:", local_botDifficulty);
+                   // If in bot mode and it's X's turn, update status to show new level
+                   if (local_gameMode === 'bot' && local_currentTurnSymbol === PLAYER_X && statusMessageElement) {
+                       updateLocalGameStatus(); // Call update function to refresh status
+                   }
+              });
+        }
+
+
+         // Configure the sound toggle button text based on initial `isSoundOn` state
+         // Add event listener
+         if (soundToggleButton) {
+             soundToggleButton.textContent = isSoundOn ? 'Turn Sound Off' : 'Turn Sound On';
+             soundToggleButton.addEventListener('click', toggleSound);
+         }
+
+         // Configure close window button click handler
+         if (closeWindowButton) {
+             // --- FIX: Call resetToModeSelection instead of window.close() ---
+             closeWindowButton.onclick = () => {
+                  console.log("Exit Game button clicked. Resetting to mode selection.");
+
+                  // Clear relevant session storage for local game on exit
+                  sessionStorage.removeItem('gameMode');
+                  sessionStorage.removeItem('botDifficulty');
+
+                  // Call the function that resets the UI and state to the selection screen
+                  resetToModeSelection();
+
+                  // Note: window.close() is unreliable and removed here.
+                  // If the user wants to truly close the browser tab/window, they must do it manually.
+             };
+             // Ensure close button is visible by default
+             closeWindowButton.style.display = 'block';
+         }
+
+
+         // Initially hide game end buttons container
+         if(gameEndButtonsContainer) {
+            gameEndButtonsContainer.style.display = 'none';
+         }
+
+         // --- Initial Setup Based on State ---
+         const urlParams = new URLSearchParams(window.location.search);
+         const modeParam = urlParams.get('mode'); // Check URL first for explicit mode
+
+         // Check if a local game mode is specified in URL or session
+         if (modeParam || local_gameMode) {
+             // --- LOCAL GAME START (via URL param or Session Storage) ---
+             console.log(`Local game detected (via URL param "${modeParam || 'none'}" or session "${local_gameMode || 'none'}"). Starting game.`);
+             const finalMode = modeParam || local_gameMode; // Use modeParam if present, otherwise session mode
+
+             // Ensure bot difficulty is read if starting bot mode from session/param
+             if (botDifficultyDropdown && finalMode === 'bot') {
+                 local_botDifficulty = botDifficultyDropdown.value; // Get value from dropdown
+                 sessionStorage.setItem('botDifficulty', local_botDifficulty); // Save difficulty to session storage
+             } else {
+                  // If not bot mode, clear bot difficulty from session just in case
+                   sessionStorage.removeItem('botDifficulty');
+                   local_botDifficulty = 'easy'; // Reset local var just in case
+             }
+
+            // If a mode is specified (local game), start it.
+            startGameMode(finalMode); // This function handles board display etc.
+            document.body.classList.add('game-started'); // Add class
+
+            // Configure restart button text and action for local games
+             if (restartButton) {
+                 restartButton.textContent = 'Restart Game!';
+                 restartButton.onclick = requestRestartGame; // Assign the local restart function
+             }
+
+         } else {
+             // --- SHOWING MODE SELECTION (Default state) ---
+             console.log("No active game detected. Showing local game mode selection.");
+             // This is the state where controls are shown, board is hidden or empty/unclickable.
+             resetToModeSelection(); // Use the dedicated function to set this state
+         }
+
+         // --- Attempt to unlock audio on initial page load if a game is expected to start/resume ---
+         // If a game is being resumed from session storage (local_gameMode set),
+         // there might not be an immediate user click to startGameMode.
+         // Attempting a silent play here might help browsers allow later playback.
+         // Only attempt if sound is supposed to be ON and audio element exists
+         if (isSoundOn && local_gameMode && moveSound) {
+             console.log("Attempting initial audio unlock on page load...");
+              // Note: This might still be blocked by the browser if no user interaction has occurred at all.
+             moveSound.volume = 0.01; // Play at very low volume
+              moveSound.play()
+                  .then(() => { console.log("Initial audio unlock attempt successful."); moveSound.volume = 1; moveSound.pause(); moveSound.currentTime = 0; }) // Restore volume, pause, and rewind if successful
+                  .catch(e => console.warn("Initial audio unlock attempt failed (this is common if triggered outside a user gesture):", e));
+         }
+    });
+
+
+    // Removed Matchmaking (Online) Game State variables
+    // initializeMatchmakingGame, updateMatchmakingGameStatus, handleOnlineCellClick, enableBoardClicking are removed
+
+    // --- Local Game Functions ---
+
+    // Starts or restarts a local game
+    function startGameMode(mode) {
+        console.log(`Local: Starting game mode: ${mode}`);
+
+        // --- Clean up potential lingering state (no online state anymore) ---
+        // Any old local game state will be overwritten below.
+
+        // --- Set up local game state ---
+        local_gameMode = mode;
+        sessionStorage.setItem('gameMode', mode); // Save mode to session storage
+
+        // If starting bot mode, get difficulty from dropdown and save
+         if (mode === 'bot' && botDifficultyDropdown) {
+             local_botDifficulty = botDifficultyDropdown.value;
+             sessionStorage.setItem('botDifficulty', local_botDifficulty);
+             console.log(`Local Bot: Bot difficulty set to: ${local_botDifficulty}`);
+         } else {
+             // If not starting bot mode (or dropdown missing), clear difficulty from session
+             sessionStorage.removeItem('botDifficulty');
+             local_botDifficulty = 'easy'; // Reset local var just in case
+         }
+
+        local_cells = Array(N * N).fill(null); // Reset board state
+        local_currentTurnSymbol = PLAYER_X; // X always starts local games
+        local_gameOver = false;
+        winningCombination = null; // Reset winning combination
+
+         // --- Attempt to unlock audio playback using the user's click on the mode button ---
+         // This is the best place to try and "unlock" audio using a direct user gesture.
+         // Only attempt if sound is supposed to be ON and audio element exists
+         if (isSoundOn && moveSound) {
+             console.log("Attempting audio unlock on mode button click...");
+             // Play at a very low volume, or even volume=0 if the browser allows that to unlock
+             moveSound.volume = 0.01;
+             moveSound.play()
+                 .then(() => { console.log("Audio unlock attempt successful from mode button click."); moveSound.volume = 1; moveSound.pause(); moveSound.currentTime = 0; }) // Restore volume, pause, and rewind if successful
+                 .catch(e => console.warn("Audio unlock attempt failed from mode button click (unexpected after click):", e));
+         }
+
+
+        // --- Update UI for game start ---
+        if (boardElement) {
+            boardElement.style.display = 'grid'; // SHOW the board
+        } else {
+             console.error("Board element not found when starting game mode!");
+        }
+
+        renderBoard(local_cells); // Render the fresh board
+
+        // Hide controls and difficulty selection
+        if (gameControlsElement) gameControlsElement.style.display = 'none';
+        if(botDifficultySelection) botDifficultySelection.style.display = 'none';
+
+        // Ensure game end buttons container is hidden at the start of a new game
+         if (gameEndButtonsContainer) {
+             gameEndButtonsContainer.style.display = 'none';
+         }
+         // Ensure restart button text is correct for local game
+         if (restartButton) {
+              restartButton.textContent = 'Restart Game!';
+              // Event listener is set in DOMContentLoaded for local mode
+         }
+
+
+         document.body.classList.add('game-started'); // Indicate game is active
+
+        // Set initial status message using the helper function
+        updateLocalGameStatus();
+
+        // Update clickability based on initial state (X's turn, human)
+        enableLocalBoardClicking(); // Enable clicks for the first human player (X)
+
+        // If starting a bot game and bot goes first (O), initiate bot move
+        // In this game X always starts, so no bot move here at the very beginning.
+    }
+
+
+    // Core function to make a move in the local game state
+    // This is called by handleLocalCellClick (human) or botMove (bot)
+    function makeLocalMove(index, playerSymbol) {
+        console.log(`makeLocalMove called for index ${index} by ${playerSymbol}`);
+
+        // Basic validation (should already be checked before calling this, but safety first)
+        if (local_gameOver) {
+             console.warn(`makeLocalMove: Game is over, cannot make move at ${index}.`);
+             return; // Do nothing if game is already over
+        }
+        if (local_cells[index] !== null) {
+            console.warn(`makeLocalMove: Cell ${index} is already taken (${local_cells[index]}).`);
+            enableLocalBoardClicking(); // Re-evaluate clickability just in case
+            return;
+        }
+        // Ensure the player attempting the move is the current player
+         if (local_currentTurnSymbol !== playerSymbol) {
+             console.warn(`makeLocalMove: Attempted move by wrong player. Expected ${local_currentTurnSymbol}, got ${playerSymbol}.`);
+              enableLocalBoardClicking(); // Re-evaluate clickability
+             return;
+         }
+
+
+        // Apply the move to the local state array
+        local_cells[index] = playerSymbol;
+        console.log("Local state after move:", [...local_cells]); // Log a copy
+
+
+        // Update the single cell element visually immediately
+        const cellElement = boardElement.children[index];
+        if (cellElement) {
+            cellElement.textContent = playerSymbol;
+            cellElement.classList.add(playerSymbol.toLowerCase());
+            cellElement.classList.add('taken'); // Mark as taken
+             cellElement.classList.remove('clickable'); // Remove clickable style
+            cellElement.style.pointerEvents = 'none'; // Ensure element pointer events are off
+             playMoveSound(); // Play move sound after successful placement
+        } else {
+            console.error("Cell element not found for index", index, "during makeLocalMove.");
+        }
+
+
+        // Check for win or draw AFTER the move has been applied
+        winningCombination = null; // Reset before checking
+        const winnerInfo = checkForWinner(playerSymbol, local_cells);
+
+        if (winnerInfo) {
+            // Game over - Winner
+            local_gameOver = true;
+            winningCombination = winnerInfo.combination;
+            highlightWinningCells(winningCombination); // Highlight winning cells
+
+             // Play win or loss sound based on who won relative to the human player (X)
+             if (winnerInfo.player === PLAYER_X) { // Human (X) won
+                 playWinSound();
+             } else if (winnerInfo.player === PLAYER_O) { // Bot (O) won
+                 playLossSound();
+             }
+
+
+        } else if (!local_cells.includes(null)) {
+            // Game over - Draw (No winner and no empty cells)
+            local_gameOver = true;
+            // Draw sound removed as per requested files
+
+        }
+
+        // Update status message and switch turn ONLY if game is NOT over
+        updateLocalGameStatus(); // Update status message based on new state
+
+        if (local_gameOver) {
+             local_currentTurnSymbol = ''; // No one's turn anymore
+
+             // Show the game end buttons container
+             if (gameEndButtonsContainer) {
+                 gameEndButtonsContainer.style.display = 'flex';
+                  console.log("Local: makeLocalMove: Game over, showing gameEndButtonsContainer.");
+             }
+             // Restart button text is already "Restart Game!" for local mode
+
+             // Clickability will be disabled by enableLocalBoardClicking below because local_gameOver is true
+        } else {
+            // Game is not over, switch turns
+            local_currentTurnSymbol = playerSymbol === PLAYER_X ? PLAYER_O : PLAYER_X;
+
+            // If it's the bot's turn (and game is not over), initiate bot move
+            if (local_gameMode === 'bot' && local_currentTurnSymbol === PLAYER_O) {
+                 // Bot's turn - status message is already set to "thinking..." by updateLocalGameStatus
+                 // enableLocalBoardClicking() called below will disable human clicks
+                 // Call botMove with a slight delay
+                 setTimeout(botMove, 500); // Delay bot move slightly
+            }
+        }
+
+         // Always re-evaluate clickability after a move, based on the NEW state (turn, game over)
+         // This enables clicks for the next human player or disables them for the bot/game over
+         enableLocalBoardClicking();
+    }
+
+
+    // Handles UI click events *only* for local mode (human player)
+    // Note: This handler is attached to each cell during renderBoard.
+    function handleLocalCellClick(event) {
+         // Get the index from the cell's data attribute
+         const index = parseInt(event.target.dataset.index);
+         if (isNaN(index)) {
+             console.error("Local Click: Invalid cell index from data attribute:", event.target.dataset.index);
+             return;
+         }
+         console.log(`Local Click: Cell ${index} clicked.`);
+
+         // Primary checks: is game over? is cell taken?
+         if (local_gameOver || local_cells[index] !== null) {
+              console.log("Local Click: Game over or cell taken, ignoring click.");
+               if (statusMessageElement && local_cells[index] !== null) { // Only show message if cell is taken
+                   // Capture the current status before briefly showing "Cell already taken!" message
+                   const originalStatusText = statusMessageElement.textContent;
+                    statusMessageElement.textContent = "Cell already taken!";
+                    setTimeout(() => {
+                        // Check if the status message is still the one we set before reverting
+                        if (statusMessageElement.textContent === "Cell already taken!") {
+                           updateLocalGameStatus(); // Revert to actual game status
+                        }
+                   }, 1500);
+               } else if (local_gameOver && statusMessageElement) {
+                    // If game is over, clicking taken cells should just re-assert game over status message
+                    updateLocalGameStatus();
+               }
+              return; // Click should ideally not be possible due to pointer-events/clickable class, but check is safe
+         }
+
+         // Additional check for bot mode: ensure it's the human player's (X's) turn
+         if (local_gameMode === 'bot' && local_currentTurnSymbol === PLAYER_O) {
+              console.log("Local Click: It's bot's turn, human click ignored.");
+              if (statusMessageElement) {
+                   // Briefly show a message without overwriting the thinking status permanently
+                   const originalStatusText = statusMessageElement.textContent; // Store bot thinking status
+                   // Avoid stacking messages if bot thinking status or "Waiting for the bot!" is already set
+                   if (!originalStatusText.includes("thinking") && !originalStatusText.includes("Waiting")) {
+                       statusMessageElement.textContent = "Waiting for the bot!";
+                       setTimeout(() => {
+                           // Revert to original message if it hasn't changed
+                           if(statusMessageElement.textContent === "Waiting for the bot!") {
+                              updateLocalGameStatus(); // Revert to the correct status (likely "thinking...")
+                           }
+                      }, 1500);
+                   }
+              }
+              return; // Do not proceed if it's the bot's turn
+         }
+
+        // If all checks pass, it's a valid human move in local mode
+        console.log(`Local Click: Valid human move at index ${index} for player ${local_currentTurnSymbol}. Making move.`);
+        makeLocalMove(index, local_currentTurnSymbol); // Call the core logic to apply the move
+    }
+
+    // Helper to update local game status message based on current state
+    function updateLocalGameStatus() {
+         if (!statusMessageElement) return;
+
+         if (local_gameOver) {
+             if (winningCombination) {
+                  // Get winner symbol from a winning cell, assuming winningCombination is set
+                  // Defensive check: ensure winningCombination is valid before using it
+                  const winner = (winningCombination && winningCombination.length > 0) ? local_cells[winningCombination[0]] : null;
+                  if (winner) {
+                      statusMessageElement.textContent = `${winner} is the WINNER! Awesome Funky Win!`;
+                  } else {
+                       console.warn("Game over with winningCombination but could not determine winner symbol.");
+                       statusMessageElement.textContent = "Game Over!"; // Fallback status
+                  }
+             } else if (!local_cells.includes(null)) { // Check if board is full for draw
+                 statusMessageElement.textContent = "It's a DRAW! Super Funky Tie!";
+             } else {
+                  // Should not happen if game over is true but no winner or draw
+                  console.warn("Game over state reached without winner or full board?");
+                   statusMessageElement.textContent = "Game Over!"; // Fallback status
+             }
+         } else { // Game is not over
+              if (local_gameMode === 'player') {
+                  statusMessageElement.textContent = `${local_currentTurnSymbol}'s turn! Go for it!`;
+              } else if (local_gameMode === 'bot') {
+                   if (local_currentTurnSymbol === PLAYER_X) {
+                       statusMessageElement.textContent = `${local_currentTurnSymbol}'s turn! Make your Funky Move! (Level: ${local_botDifficulty})`;
+                   } else { // Bot's turn (O)
+                        statusMessageElement.textContent = `Funky Bot (O) is thinking... (Level: ${local_botDifficulty})`;
+                   }
+              } else { // Game is in mode selection state ('')
+                   statusMessageElement.textContent = "Select a mode to start your funky game!";
+              }
+         }
+    }
+
+
+    // Controls which cells are clickable in local game modes and selection screen
+    // Only local_gameMode exists now, so this function is the primary click controller
+    function enableLocalBoardClicking() {
+         // Removed mm_roomId check
+
+         if (!boardElement) {
+             console.warn("enableLocalBoardClicking: Board element not found.");
+             return;
+         }
+
+        // Determine if human clicks should be allowed on the board container level
+        // Clicks are allowed on the board container only if a local game mode is active AND
+        // (it's PlayerVsPlayer mode) OR (it's Bot mode AND it's the human player's (X's) turn)
+        // If local_gameMode is '', the board container pointer-events will be 'none'.
+         const canHumanClickOnBoardContainer = local_gameMode !== '' && !local_gameOver && (local_gameMode === 'player' || (local_gameMode === 'bot' && local_currentTurnSymbol === PLAYER_X));
+
+         boardElement.style.pointerEvents = canHumanClickOnBoardContainer ? 'auto' : 'none';
+         // console.log(`Local: Setting board pointer-events for human clicks to ${canHumanClickOnBoardContainer ? 'auto' : 'none'}. State: Mode=${local_gameMode || 'none'}, Turn=${local_currentTurnSymbol || 'none'}, GameOver=${local_gameOver}`); // Suppress logging
+
+
+         // Update the 'clickable' class on individual cells for visual feedback (hover effect)
+         // This class is only applied if the *board container* is clickable *and* the cell is empty.
+         // This ensures cells aren't styled as clickable if the whole board is disabled (e.g., bot turn, game over, selection screen).
+         const cells = boardElement.querySelectorAll('.cell');
+          cells.forEach((cell, index) => {
+               const isCellEmpty = local_cells[index] === null;
+
+               // A cell gets the 'clickable' class if the board container is enabled for human clicks AND the cell is currently empty
+               if (canHumanClickOnBoardContainer && isCellEmpty) {
+                   cell.classList.add('clickable');
+                   cell.style.pointerEvents = 'auto'; // Ensure individual cell allows clicks if container does
+               } else {
+                   cell.classList.remove('clickable');
+                   cell.style.pointerEvents = 'none'; // Ensure individual cell blocks clicks if taken or board disabled
+               }
+         });
+    }
+
+
+    // --- Bot Logic ---
+
+    function botMove() {
+         console.log(`Local Bot: BotMove function called. Difficulty: ${local_botDifficulty}`);
+         // Ensure it's local bot mode, game is not over, and it's O's turn
+         // Removed mm_roomId check
+         if (local_gameOver || local_gameMode !== 'bot' || local_currentTurnSymbol !== PLAYER_O) {
+              console.log("Local Bot: Conditions not met for bot move. Exiting.", { local_gameOver, local_gameMode, local_currentTurnSymbol });
+              // If somehow called in wrong state, ensure clickability is correct based on current (wrong) state
+              enableLocalBoardClicking();
+              return;
+         }
+
+         console.log(`Local Bot: Finding move for level: ${local_botDifficulty}...`);
+         // Human clicks were disabled by enableLocalBoardClicking when O's turn started
+
+         let moveIndex = -1; // Default invalid move
+
+         const availableCells = getAvailableCells(local_cells);
+
+         if (availableCells.length === 0) {
+             console.log("Local Bot: No available cells left.");
+              // This case should lead to a draw, handled by makeLocalMove check.
+              enableLocalBoardClicking(); // Ensure human clicks are off
+              return;
+         }
+
+         switch (local_botDifficulty) {
+             case 'easy':
+                 console.log("Local Bot: Easy mode - Picking random move.");
+                 moveIndex = availableCells[Math.floor(Math.random() * availableCells.length)];
+                 break;
+
+             case 'medium':
+                 console.log("Local Bot: Medium mode - Checking for winning/blocking moves.");
+                 moveIndex = findMediumMove(local_cells, PLAYER_O, PLAYER_X);
+                 if (moveIndex === -1) { // If no winning or blocking move found
+                     console.log("Local Bot (Medium): No immediate win/block. Picking random move.");
+                     moveIndex = availableCells[Math.floor(Math.random() * availableCells.length)];
+                 }
+                 break;
+
+             case 'hard':
+                 console.log("Local Bot: Hard mode - Using Minimax.");
+                 // Minimax looks ahead from the bot's perspective (maximizing its score)
+                 // Need to provide the current state, depth 0, maximizing player (Bot=O), minimizing player (Human=X)
+                 const bestMove = findBestMoveMinimax(local_cells, 0, true, -Infinity, Infinity, PLAYER_O, PLAYER_X);
+                 moveIndex = bestMove.index;
+                 console.log("Local Bot (Hard): Minimax selected move index:", moveIndex, "with score:", bestMove.score);
+
+                 // Handle case where Minimax didn't find a move (e.g., board full or weird state)
+                 if (moveIndex === -1 && availableCells.length > 0) {
+                     console.warn("Minimax failed to return a move, picking random available cell as fallback.");
+                     moveIndex = availableCells[Math.floor(Math.random() * availableCells.length)];
+                 }
+                 break;
+
+             default:
+                 console.warn(`Local Bot: Unknown difficulty '${local_botDifficulty}'. Falling back to easy.`);
+                 moveIndex = availableCells[Math.floor(Math.random() * availableCells.length)];
+         }
+
+         // After determining the move, perform validation again before making it
+          // Check if game is NOT over, the target cell is still empty, AND it's still O's turn
+         if (moveIndex !== -1 && local_cells[moveIndex] === null && local_currentTurnSymbol === PLAYER_O && !local_gameOver) {
+             console.log("Local Bot: Making move at index", moveIndex);
+             // The makeLocalMove function handles updating UI, switching turn, checking for end game, and calling enableLocalBoardClicking
+             makeLocalMove(moveIndex, PLAYER_O);
+         } else {
+              console.warn("Local Bot: Determined move index is invalid or state changed. Cannot make move.", { moveIndex, local_gameOver, cellValue: local_cells[moveIndex], currentTurn: local_currentTurnSymbol });
+              // If state is invalid (e.g., human clicked before bot finished thinking), just ensure clickability is correct
+              enableLocalBoardClicking(); // Re-evaluate clickability based on potentially new state
+         }
+    }
+
+    // Medium Bot Logic: 1-ply lookahead (check immediate win or block)
+    function findMediumMove(board, mySymbol, opponentSymbol) {
+        const availableCells = getAvailableCells(board);
+
+        // 1. Check if bot can win in the next move
+        for (const index of availableCells) {
+            const testBoard = [...board]; // Create a copy to simulate
+            testBoard[index] = mySymbol;
+            if (checkForWinner(mySymbol, testBoard)) {
+                console.log(`Local Bot (Medium): Found winning move at ${index}`);
+                return index; // Take the winning move!
+            }
+        }
+
+        // 2. Check if opponent can win in their next move and block it
+        for (const index of availableCells) {
+            const testBoard = [...board]; // Create a copy to simulate
+            testBoard[index] = opponentSymbol;
+            if (checkForWinner(opponentSymbol, testBoard)) {
+                console.log(`Local Bot (Medium): Found opponent winning move at ${index}. Blocking.`);
+                return index; // Block the opponent's winning move!
+            }
+        }
+
+        // 3. No immediate win or block found, return -1
+        return -1; // No special move found
+    }
+
+    // --- Hard Bot Logic: Minimax ---
+
+    // Finds the best move using the minimax algorithm
+    // Returns { index: bestMoveIndex, score: bestScore } only when depth 0
+    // Returns score otherwise
+    function findBestMoveMinimax(board, depth, isMaximizingPlayer, alpha, beta, mySymbol, opponentSymbol) {
+         // Note: This function is the starting point for the Minimax *algorithm*.
+         // The actual recursive function is `minimax`.
+         // This function finds the best move *index* at the root (depth 0).
+
+         const availableCells = getAvailableCells(board);
+         let bestScore = -Infinity; // Bot wants to maximize score
+         let bestMoveIndex = -1;
+
+         console.log("Local Bot (Hard/Minimax): Starting root search...");
+
+         // Shuffle available cells for some variety on equally scored moves at the root
+         shuffleArray(availableCells);
+
+         for (const index of availableCells) {
+             const newBoard = [...board];
+             newBoard[index] = mySymbol; // Simulate bot's move (Maximizing player)
+
+             // Call minimax for the opponent's turn (minimizing player)
+             // Start recursive calls from depth 1 (after the root move)
+             const evaluation = minimax(newBoard, depth + 1, false, alpha, beta, mySymbol, opponentSymbol);
+
+             // console.log(`Minimax: Root move ${index} evaluation: ${evaluation}`); // Avoid spamming console
+
+             // Find the move that maximizes the bot's score at the root
+             if (evaluation > bestScore) {
+                 bestScore = evaluation;
+                 bestMoveIndex = index;
+             }
+             alpha = Math.max(alpha, evaluation); // Update alpha at the root
+             // No beta check needed at the root level of the initial call
+         }
+
+          // If no move resulted in a score change or if all moves lead to the same score,
+          // pick the first available move (which is already shuffled).
+         if (bestMoveIndex === -1 && availableCells.length > 0) {
+              bestMoveIndex = availableCells[0];
+              console.warn("Minimax did not find a unique best move at depth 0, picking first available (shuffled):", bestMoveIndex);
+         }
+
+
+         console.log(`Local Bot (Hard/Minimax): Best move found: ${bestMoveIndex} with score ${bestScore}`);
+         return { index: bestMoveIndex, score: bestScore };
+    }
+
+    // The recursive Minimax algorithm function
+    function minimax(board, depth, isMaximizingPlayer, alpha, beta, mySymbol, opponentSymbol) {
+        // console.log(`Minimax: Depth ${depth}, isMaximizing: ${isMaximizingPlayer}, Alpha: ${alpha}, Beta: ${beta}`); // Log calls for debugging
+
+        // Base Case: Check for terminal states or max depth
+        // Check for win for the player *who just made the move* (the player opposite of the current isMaximizingPlayer state).
+        const playerWhoJustMoved = isMaximizingPlayer ? opponentSymbol : mySymbol;
+        const winnerInfo = checkForWinner(playerWhoJustMoved, board);
+
+        if (winnerInfo) {
+             // Terminal state found (win/loss)
+             if (winnerInfo.player === mySymbol) { // If *mySymbol* won (bot's symbol)
+                  // Bot wins. Positive score. Adjust by depth to prefer faster wins.
+                  // The score is from the perspective of the MaximizingPlayer (bot).
+                  return SCORES.win - depth; // Favor wins closer to the current move
+             } else if (winnerInfo.player === opponentSymbol) { // If *opponentSymbol* won (human's symbol)
+                  // Bot loses. Negative score. Adjust by depth to penalize deeper losses less.
+                  // If the state is a win for the opponent:
+                  return SCORES.lose + depth; // Penalize losses further away less
+             }
+              // Should not reach here if winnerInfo is not null and player matches
+        }
+
+
+        if (!getAvailableCells(board).length) {
+            return SCORES.draw; // Draw (board is full)
+        }
+
+        if (depth >= MAX_DEPTH) {
+            // Reached max depth, evaluate the current board heuristically
+            // Evaluate from the perspective of the player *whose turn it is* next (isMaximizingPlayer)
+            // The score is always returned from the bot's (mySymbol's) perspective.
+            // console.log(`Minimax: Reached max depth ${depth}. Evaluating.`); // Log depth limit
+            return evaluateBoard(board, mySymbol, opponentSymbol); // Evaluate from bot's perspective (mySymbol)
+        }
+
+        // Recursive Step
+        const availableCells = getAvailableCells(board);
+
+        if (isMaximizingPlayer) { // Bot's turn (Maximizing player)
+            let maxEval = -Infinity;
+            // Iterate through available moves for the current player
+            for (const index of availableCells) {
+                const newBoard = [...board];
+                newBoard[index] = mySymbol; // Simulate current player's move (bot)
+
+                // Call minimax for the opponent's turn (minimizing player)
+                const evaluation = minimax(newBoard, depth + 1, false, alpha, beta, mySymbol, opponentSymbol);
+                maxEval = Math.max(maxEval, evaluation);
+                alpha = Math.max(alpha, evaluation); // Update alpha
+                if (beta <= alpha) {
+                     // console.log("Minimax: Alpha-beta pruning branch cut (Maximizing)."); // Suppress logging
+                    break; // Alpha-beta pruning
+                }
+            }
+            return maxEval;
+        } else { // Opponent's turn (Minimizing player)
+            let minEval = Infinity;
+             // Iterate through available moves for the current player
+            for (const index of availableCells) {
+                const newBoard = [...board];
+                newBoard[index] = opponentSymbol; // Simulate current player's move (opponent)
+
+                // Call minimax for the bot's turn (maximizing player)
+                const evaluation = minimax(newBoard, depth + 1, true, alpha, beta, mySymbol, opponentSymbol);
+                minEval = Math.min(minEval, evaluation);
+                beta = Math.min(beta, evaluation); // Update beta
+                if (beta <= alpha) {
+                    // console.log("Minimax: Alpha-beta pruning branch cut (Minimizing)."); // Suppress logging
+                    break; // Alpha-beta pruning
+                }
+            }
+            return minEval;
+        }
+    }
+
+
+     // Fisher-Yates (aka Knuth) Shuffle - Helper for Minimax root moves
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+        }
+        return array; // Return the shuffled array
+    }
+
+
+    // Heuristic evaluation function for the board state
+    // Gives a score from the perspective of the bot (mySymbol)
+    function evaluateBoard(board, mySymbol, opponentSymbol) {
+        let score = 0;
+
+        // Helper function to count potential patterns (like N-1, N-2 in a row with empty spaces)
+        function countPotentialLines(board, player) {
+            let playerScore = 0;
+            const playerTarget = player;
+            const opponentTarget = player === mySymbol ? opponentSymbol : mySymbol;
+
+            const directions = [
+                { dr: 0, dc: 1 }, // Horizontal
+                { dr: 1, dc: 0 }, // Vertical
+                { dr: 1, dc: 1 }, // Diagonal /
+                { dr: 1, dc: -1 } // Diagonal \
+            ];
+
+            // Iterate through all possible starting cells for a WIN_LENGTH line
+            for (let r = 0; r < N; r++) {
+                for (let c = 0; c < N; c++) {
+
+                     // Check each direction from this cell
+                     for (const direction of directions) {
+                          let playerCount = 0;
+                          let emptyCount = 0;
+                          let blocked = false; // Is this potential line blocked by the opponent?
+
+                          // Check WIN_LENGTH cells in this direction
+                          for (let k = 0; k < WIN_LENGTH; k++) {
+                              const currRow = r + k * direction.dr;
+                              const currCol = c + k * direction.dc;
+                              const currIndex = currRow * N + currCol;
+
+                               // Check bounds
+                              if (currRow >= 0 && currRow < N && currCol >= 0 && currCol < N) {
+                                   const cellValue = board[currIndex];
+
+                                   if (cellValue === playerTarget) {
+                                       playerCount++;
+                                   } else if (cellValue === null) {
+                                       emptyCount++;
+                                   } else {
+                                        // Opponent piece blocks this potential line
+                                        blocked = true;
+                                        break; // Stop checking this specific line segment
+                                   }
+                              } else {
+                                  // Out of bounds, invalid line segment
+                                  blocked = true; // Consider out of bounds as blocked
+                                  break; // Stop checking this specific line segment
+                              }
+                          }
+
+                          // If the line segment isn't blocked and could potentially be completed (contains only player pieces and empty cells)
+                           if (!blocked && (playerCount + emptyCount) === WIN_LENGTH) {
+                               // Assign scores based on the number of player pieces in the potential line
+                               // Prioritize lines with more pieces for the current player (bot)
+                               // Weaker lines get lower scores.
+                               // Note: Exact win (playerCount === WIN_LENGTH) is handled by the base case in minimax.
+                               if (playerCount === WIN_LENGTH - 1) { // e.g., 3 in a row for WIN_LENGTH=4
+                                   playerScore += SCORES.threeInARow;
+                               } else if (playerCount === WIN_LENGTH - 2) { // e.g., 2 in a row
+                                   playerScore += SCORES.twoInARow;
+                               }
+                                // You could add more cases like playerCount === WIN_LENGTH-3 etc.
+                           }
+                     }
+                }
+            }
+             return playerScore;
+        }
+
+        // Calculate potential scores for bot (maximizing) and opponent (minimizing)
+        const botPotentialScore = countPotentialLines(board, mySymbol);
+        const opponentPotentialScore = countPotentialLines(board, opponentSymbol);
+
+        // The heuristic score is the difference between bot's potential and opponent's potential
+        score = botPotentialScore - opponentPotentialScore;
+
+         // Add a preference for center columns (optional heuristic)
+         const centerCol = Math.floor(N / 2);
+         for (let r = 0; r < N; r++) {
+              const index = r * N + centerCol;
+              if (board[index] === mySymbol) {
+                  score += SCORES.centerPreference;
+              } else if (board[index] === opponentSymbol) {
+                  score -= SCORES.centerPreference;
+              }
+         }
+
+        // console.log("Minimax Evaluation Score:", score); // Suppress logging
+        return score;
+    }
+
+
+    // Initiates a restart for the local game mode or resets to selection
+    function requestRestartGame() {
+        console.log("requestRestartGame called.");
+
+        // Logic for restarting local game mode
+        if (local_gameMode) {
+            console.log(`Local: Restarting mode: ${local_gameMode}`);
+            // Clear winning combination and re-call startGameMode with the current mode
+            winningCombination = null; // Clear highlight
+            startGameMode(local_gameMode);
+        } else {
+             console.warn("Local: Restart button clicked, but no local game mode detected. Resetting to mode selection.");
+             // Fallback: if restart is somehow clicked when in the selection state, just reset to selection
+             resetToModeSelection();
+        }
+    }
+
+
+     // Central function to reset the UI and state to the mode selection screen
+     // Used on initial load if no game is active, or when exiting a local game via a "Back to Menu" button or fallback restart.
+     function resetToModeSelection() {
+          console.log("Resetting game to mode selection screen.");
+
+          // Clear local game state
+          local_cells.fill(null);
+          local_gameOver = false;
+          local_currentTurnSymbol = PLAYER_X; // Reset turn symbol (though not used in this state)
+          winningCombination = null; // Clear winning highlight
+          local_gameMode = ''; // Explicitly set mode to none for selection screen
+
+          // Clear local game session storage
+          sessionStorage.removeItem('gameMode');
+          sessionStorage.removeItem('botDifficulty');
+
+          // Removed cleaning up online state
+
+          // --- Update UI to show selection screen ---
+          if(gameControlsElement) gameControlsElement.style.display = 'flex'; // Show mode selection buttons
+          // Show bot difficulty selection as it's part of the local mode selection
+          if(botDifficultySelection) botDifficultySelection.style.display = 'flex';
+          if(gameEndButtonsContainer) gameEndButtonsContainer.style.display = 'none'; // Hide end buttons
+
+           // Crucially: HIDE THE BOARD when showing the controls
+           if(boardElement) {
+               boardElement.style.display = 'none';
+               console.log("Reset: Hiding board element.");
+           } else {
+                console.error("Reset: Board element not found!");
+           }
+
+          // Update status message using the helper function
+          updateLocalGameStatus(); // This will set the "Select a mode..." message
+
+          // Remove body class indicating game is active
+          document.body.classList.remove('game-started');
+
+           // Reset dropdown value visually (optional)
+           if (botDifficultyDropdown) botDifficultyDropdown.value = 'easy'; // Or the default you prefer
+     }
+
+
+    // --- Utility Functions ---
+
+    // Gets indices of empty cells from a given board state array
+    function getAvailableCells(boardState) {
+        const emptyIndices = [];
+         // Ensure boardState is an array before iterating
+         if (!Array.isArray(boardState)) {
+             console.error("getAvailableCells called with invalid boardState:", boardState);
+             return [];
+         }
+         for(let i = 0; i < boardState.length; i++) {
+             if (boardState[i] === null) {
+                 emptyIndices.push(i);
+             }
+         }
+         return emptyIndices;
+    }
+
+    // Checks for a winning line of WIN_LENGTH for a given player on a board layout
+    function checkForWinner(playerSymbol, boardLayout) {
+        const N_check = N;
+        const W_check = WIN_LENGTH;
+
+        if (!boardLayout || !Array.isArray(boardLayout) || boardLayout.length !== N_check * N_check) {
+             // console.error("checkForWinner called with invalid boardLayout:", boardLayout); // Suppress excessive logging during minimax simulation
+             return null; // Cannot check winner on invalid board
+         }
+
+        const directions = [
+            { dr: 0, dc: 1 }, // Horizontal
+            { dr: 1, dc: 0 }, // Vertical
+            { dr: 1, dc: 1 }, // Diagonal /
+            { dr: 1, dc: -1 } // Diagonal \
+        ];
+
+        // Iterate through all possible starting cells for a WIN_LENGTH line
+        // Note: We only need to check cells from which a WIN_LENGTH line *could* start in each direction
+        // For horizontal: iterate rows 0 to N-1, cols 0 to N-W_check
+        // For vertical: iterate rows 0 to N-W_check, cols 0 to N-1
+        // For diagonal /: iterate rows 0 to N-W_check, cols 0 to N-W_check
+        // For diagonal \: iterate rows 0 to N-W_check, cols W_check-1 to N-1
+
+        for (let r = 0; r < N_check; r++) {
+            for (let c = 0; c < N_check; c++) {
+
+                 // Check for potential winning lines starting from (r, c) in each direction
+                 for (const direction of directions) {
+                      let count = 0;
+                      const combination = [];
+                      let possible = true; // Assume it's a possible line for this player until proven otherwise
+
+                      // Check WIN_LENGTH cells in this direction
+                      for (let k = 0; k < W_check; k++) {
+                          const currRow = r + k * direction.dr;
+                          const currCol = c + k * direction.dc;
+                          const currIndex = currRow * N_check + currCol;
+
+                            // Check bounds: make sure the current cell is within the grid
+                           if (currRow >= 0 && currRow < N_check && currCol >= 0 && currCol < N_check) {
+                                // Check if the cell contains the correct player's symbol
+                                if (boardLayout[currIndex] === playerSymbol) {
+                                    count++;
+                                    combination.push(currIndex);
+                                } else {
+                                    // Found a cell that doesn't match, this is not a winning line starting here
+                                    possible = false;
+                                    break; // Move to the next direction or starting cell
+                                }
+                            } else {
+                                // Went out of bounds, not a winning line starting here
+                                possible = false;
+                                break; // Move to the next direction or starting cell
+                            }
+                      }
+
+                      // If we counted WIN_LENGTH symbols in a row and stayed in bounds
+                      if (possible && count === W_check) {
+                          // console.log(`Winner found: ${playerSymbol} at r=${r}, c=${c} in direction dr=${direction.dr}, dc=${direction.dc}`); // Suppress excessive logging
+                          // Return the player and the winning cell indices
+                          return { player: playerSymbol, combination: combination };
+                      }
+                 }
+            }
+        }
+
+        return null; // No winner found after checking all cells and directions
+     }
+
+    // Highlights the cells in the winning combination
+    function highlightWinningCells(combination) {
+        console.log("Highlighting winning combination:", combination);
+        if (!combination || !Array.isArray(combination) || !boardElement) {
+             console.warn("HighlightWinningCells called with invalid combination or boardElement.");
+             return;
+         }
+
+         // Get current cell elements rendered on the board
+         const currentCells = boardElement.children;
+
+        combination.forEach(index => {
+            // Ensure the index is valid and the cell element exists in the *current* DOM
+            if (index >= 0 && index < currentCells.length) {
+                 const cellElement = currentCells[index];
+                 if (cellElement) {
+                     cellElement.classList.add('winning');
+                     // console.log("Added 'winning' class to cell index", index); // Suppress logging
+                 } else {
+                     console.warn("Cell element not found for index", index, "during highlighting.");
+                 }
+            } else {
+                 console.warn("Invalid index in winning combination:", index);
+            }
+        });
+    }
+
+    // Renders the entire board based on the provided state array
+    function renderBoard(boardToRender) {
+        // console.log("renderBoard called with state:", boardToRender); // Avoid spamming console
+        if (!boardElement) {
+             console.error("Game board element with ID 'board' not found for rendering!");
+             return;
+         }
+
+        // Clear existing cells from the DOM
+        boardElement.innerHTML = '';
+         // Set grid dimensions based on N (redundant if in CSS, but safe)
+         boardElement.style.gridTemplateColumns = `repeat(${N}, auto)`; // Use auto to let cell width define column size
+         boardElement.style.gridTemplateRows = `repeat(${N}, auto)`;
+
+        // Validate input board state
+        if (!boardToRender || !Array.isArray(boardToRender) || boardToRender.length !== N * N) {
+             console.error("renderBoard called with invalid or missing board state. Rendering empty grid.");
+             // Render an empty grid structure even if state is bad
+             boardToRender = Array(N * N).fill(null);
+         }
+
+        // Create and append cell elements
+        boardToRender.forEach((cellValue, index) => {
+            const cellElement = document.createElement('div');
+            cellElement.className = 'cell';
+            cellElement.dataset.index = index; // Add data attribute for easy lookup
+
+            // Add symbol and classes if cell is taken
+            if (cellValue) {
+                cellElement.textContent = cellValue;
+                cellElement.classList.add(cellValue.toLowerCase()); // 'x' or 'o'
+                cellElement.classList.add('taken'); // Mark as taken
+                // Remove default clickable class and pointer-events if added by CSS/JS default
+                cellElement.classList.remove('clickable');
+                 cellElement.style.pointerEvents = 'none';
+            }
+
+            // Add click listener - Always use the local handler now
+            cellElement.addEventListener('click', handleLocalCellClick);
+
+            boardElement.appendChild(cellElement);
+
+             // Add winning class if part of the global winningCombination (set after game end)
+             if (winningCombination && Array.isArray(winningCombination) && winningCombination.includes(index)) {
+                 cellElement.classList.add('winning');
+             }
+             // Note: No need to remove 'winning' class here, as innerHTML clears existing classes before adding.
+        });
+
+        // After rendering, update clickability based on the current game mode/state
+        // Only local mode logic is needed now
+        enableLocalBoardClicking(); // Local click logic (enabled for human turns unless game over or selection state)
+    }
+
+
+  </script>
+</body>
+</html>
