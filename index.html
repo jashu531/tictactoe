@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,8 +9,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Bangers&display=swap" rel="stylesheet">
 
-  <!-- Removed Socket.IO client library - it's not needed for local/bot modes -->
-  <!-- <script src="/socket.io/socket.io.js"></script> -->
+  <!-- Socket.IO client library is crucial if you want the online mode to work -->
+  <!-- This path assumes the Socket.IO server is serving the client library at /socket.io/socket.io.js -->
+  <script src="/socket.io/socket.io.js"></script>
 
   <style>
     /* --- General Styles --- */
@@ -191,138 +193,56 @@
     /* --- Game Board --- */
     .board {
       display: grid;
-      grid-template-columns: repeat(7, 55px); /* Slightly larger cells */
-      grid-template-rows: repeat(7, 55px); /* Slightly larger cells */
-      gap: 6px; /* Increased gap */
-      background-color: #4a235a; /* Dark purple background */
-      padding: 10px; /* Increased padding */
-      border: 5px solid #f1c40f; /* Yellow border */
-      border-radius: 15px; /* More rounded corners */
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); /* Add shadow */
+      /* Use fractional units for flexible columns/rows, based on N=7 */
+      grid-template-columns: repeat(7, 1fr);
+      grid-template-rows: repeat(7, 1fr);
+      /* Control the overall size of the board responsively using viewport units */
+      /* Use min() to ensure it fits within the smaller dimension (width or height) and doesn't exceed a max size if needed */
+      width: min(90vw, 90vh, 500px); /* Example: max 500px, but scale down */
+      height: min(90vw, 90vh, 500px); /* Keep it square, scale down */
+      gap: 1.5vmin; /* Gap scales with viewport size */
+      background-color: #4a235a;
+      padding: 3vmin; /* Padding scales with viewport size */
+      border: 5px solid #f1c40f;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
       /* Initially hidden, JS shows it */
-      display: none; /* <-- Hide by default */
+      display: none;
+      box-sizing: border-box; /* Include padding and border in the element's total width and height */
     }
-
-    /* Responsive adjustment for smaller screens */
-    @media (max-width: 420px) {
-         .board {
-             grid-template-columns: repeat(7, 40px); /* Smaller cells */
-             grid-template-rows: repeat(7, 40px); /* Smaller cells */
-             gap: 4px;
-             padding: 5px;
-         }
-         .cell {
-             width: 40px;
-             height: 40px;
-             font-size: 1.2rem;
-         }
-         .branding {
-            font-size: 2em;
-         }
-         .status-message {
-            font-size: 1.2rem;
-            padding: 8px 15px;
-         }
-         .game-controls button, .restart-btn, .close-btn, .sound-toggle-btn {
-             font-size: 0.9rem;
-             padding: 10px 15px;
-         }
-         .game-container {
-             padding: 20px;
-         }
-          .difficulty-selection {
-             max-width: 250px; /* Adjust for smaller screen */
-         }
-          .game-controls button, .restart-btn, .close-btn, .sound-toggle-btn {
-             max-width: 250px; /* Adjust for smaller screen */
-          }
-    }
-
 
     /* --- Board Cells --- */
     .cell {
-      width: 55px; /* Match grid size */
-      height: 55px; /* Match grid size */
-      background-color: #3498db; /* Vibrant blue */
+      /* Remove fixed width/height - let the grid handle sizing (1fr makes them fill the grid area) */
+      /* width: 55px; */
+      /* height: 55px; */
+      background-color: #3498db;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 2.5rem; /* Larger symbol font */
+      /* Font size scales with viewport */
+      font-size: 5vmin; /* Adjust as needed for symbol size */
       font-weight: bold;
-      color: #ffffff; /* White symbol color */
+      color: #ffffff;
       font-family: 'Permanent Marker', cursive;
       line-height: 1;
       user-select: none;
-      border-radius: 8px; /* Rounded cell corners */
-      transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease; /* Add transitions */
-      box-shadow: inset 0 2px 5px rgba(0,0,0,0.2); /* Inner shadow */
+      border-radius: 8px;
+      transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
        pointer-events: none; /* Default state is not clickable */
     }
 
-    .cell.clickable {
-        cursor: pointer;
-        pointer-events: auto; /* Enable pointer events when clickable */
-    }
-
-    .cell.clickable:hover {
-        background-color: #5dade2; /* Lighter blue on hover */
-        transform: scale(1.05); /* Slight scale on hover */
-        box-shadow: 0 0 15px rgba(255, 255, 255, 0.5), inset 0 2px 5px rgba(0,0,0,0.2); /* Glow effect + inner shadow */
-    }
-     .cell.clickable:active {
-         transform: scale(0.98); /* Slight press effect */
-         box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
-     }
-
-
-    .cell.taken {
-      cursor: not-allowed;
-      box-shadow: inset 0 2px 5px rgba(0,0,0,0.3); /* Stronger inner shadow when taken */
-       pointer-events: none; /* Ensure taken cells are not clickable */
-    }
-
-    /* Animation for placing X or O */
-    .cell.x, .cell.o {
-        animation: popIn 0.3s ease-out forwards; /* Pop in animation */
-        text-shadow:
-           -2px -2px 0 #eee,
-            2px -2px 0 #eee,
-            -2px 2px 0 #eee,
-             2px 2px 0 #eee; /* Lighter text shadow */
-    }
-
-    @keyframes popIn {
-        0% { transform: scale(0.5); opacity: 0; }
-        70% { transform: scale(1.1); opacity: 1; }
-        100% { transform: scale(1); }
-    }
-
-    .cell.x {
-      color: #00008B; /* Dark blue X */
-       background-color: #f1c40f; /* Yellow background for X */
-    }
-
-    .cell.o {
-      color: #FFA500; /* Orange O */
-      background-color: #e74c3c; /* Red background for O */
-    }
-
-    /* Winning cell styles */
-    .cell.winning {
-      background-color: #2ecc71 !important; /* Vibrant green highlight */
-      color: #fff !important; /* White text */
-      text-shadow:
-           -2px -2px 0 #333,
-            2px -2px 0 #333,
-            -2px 2px 0 #333,
-             2px 2px 0 #333; /* Darker shadow for contrast */
-      filter: none;
-      animation: pulseWin 1s infinite alternate; /* Pulsing animation */
-    }
-
-    @keyframes pulseWin {
-        0% { transform: scale(1); box-shadow: 0 0 10px #2ecc71; }
-        100% { transform: scale(1.05); box-shadow: 0 0 20px #2ecc71; }
+    /* Responsive adjustments for smaller screens */
+    /* The vmin units and grid handles most scaling, but minor tweaks might be needed */
+    @media (max-width: 420px) {
+     /* The board and cell sizes are handled by vmin and min() in the main rules */
+     /* Only adjust other elements specific to very small layouts if needed */
+     .branding { font-size: 2em; }
+     .status-message { font-size: 1.2rem; padding: 8px 15px; }
+     .game-controls button, .restart-btn, .close-btn, .sound-toggle-btn { font-size: 0.9rem; padding: 10px 15px; max-width: 250px;}
+     .game-container { padding: 20px; }
+     .difficulty-selection { max-width: 250px; }
     }
 
 
@@ -369,8 +289,9 @@
       </div>
       <button onclick="startGameMode('bot')">Play Funky Bot!</Button>
 
-       <!-- Removed Online Play Button -->
-       <!-- <button onclick="redirectToLobby()">Play Online</button> -->
+       <!-- Example Online Play Button - Requires Server/Lobby -->
+       <!-- This button would typically redirect to a lobby page or trigger matchmaking -->
+       <!-- <button onclick="window.location.href = '/lobby.html'">Play Online</button> -->
     </div>
 
     <!-- The board will be generated and managed by JavaScript -->
@@ -435,15 +356,16 @@
     };
 
 
-    // Removed Matchmaking (Online) Game State variables
-    // let socket;
-    // let mm_roomId = null;
-    // let mm_mySymbol = null;
-    // let mm_currentBoardState = Array(N * N).fill(null);
-    // let mm_isMyTurn = false;
-    // let mm_onlineGameOver = false;
-    // let mm_winner = null;
-    // let mm_isDraw = false;
+    // Matchmaking (Online) Game State
+    // These variables are needed if you want the online mode to work
+    let socket; // Socket.IO connection object
+    let mm_roomId = null; // ID of the online game room
+    let mm_mySymbol = null; // 'X' or 'O' for the local client in online game
+    let mm_currentBoardState = Array(N * N).fill(null); // Server's board state (client keeps a copy)
+    let mm_isMyTurn = false; // Boolean indicating if it's this client's turn online
+    let mm_onlineGameOver = false; // Boolean indicating if the online game has ended
+    let mm_winner = null; // Winner symbol ('X', 'O', or null) in online game
+    let mm_isDraw = false; // Boolean indicating a draw in online game
 
 
     // Local Game State
@@ -452,7 +374,7 @@
     let local_gameOver = false; // Boolean indicating if the local game has ended
     let local_gameMode = ''; // '', 'player' (PvP), 'bot' (PvBot)
     let local_botDifficulty = 'easy'; // Default bot difficulty
-    let winningCombination = null; // Array of indices for winning cells (used by local modes for highlighting)
+    let winningCombination = null; // Array of indices for winning cells (used by both modes for highlighting)
 
     // Sound State
     // Load sound preference from localStorage, default to true
@@ -492,15 +414,15 @@
 
      // Function to handle toggling sound
      function toggleSound() {
+         console.log("Sound toggle clicked."); // Log click
          isSoundOn = !isSoundOn; // Toggle the state
          localStorage.setItem('isSoundOn', isSoundOn.toString()); // Save to localStorage
+         console.log("Sound is now:", isSoundOn ? "On" : "Off"); // Log new state
 
          // Update button text
          if (soundToggleButton) {
              soundToggleButton.textContent = isSoundOn ? 'Turn Sound Off' : 'Turn Sound On';
          }
-
-         console.log("Sound is now:", isSoundOn ? "On" : "Off");
 
          // If sound is just turned ON, attempt a silent play unlock
          // This helps browsers allow audio playback triggered by non-direct user gestures later.
@@ -529,15 +451,16 @@
 
     // --- Initialize Game on DOM Ready ---
     document.addEventListener('DOMContentLoaded', () => {
-        console.log('DOMContentLoaded fired.');
+        console.log('DOMContentLoaded fired. Initializing game.');
 
-        // Removed check for online game data (mm_roomId, mm_mySymbol)
-        // mm_roomId = sessionStorage.getItem('roomId');
-        // mm_mySymbol = sessionStorage.getItem('mySymbol');
-
-        // Retrieve gameMode and botDifficulty from session storage for continuity in local games
+        // Check session storage for online game data
+        mm_roomId = sessionStorage.getItem('roomId');
+        mm_mySymbol = sessionStorage.getItem('mySymbol');
+        // Retrieve gameMode and botDifficulty from session storage for continuity
         local_gameMode = sessionStorage.getItem('gameMode') || '';
         local_botDifficulty = sessionStorage.getItem('botDifficulty') || 'easy'; // Load saved difficulty
+        console.log(`Initial state check: mm_roomId=${mm_roomId}, mm_mySymbol=${mm_mySymbol}, local_gameMode=${local_gameMode}, local_botDifficulty=${local_botDifficulty}`); // Log initial state from session
+
 
         // Set the dropdown value based on loaded difficulty (applies to mode selection state)
         if (botDifficultyDropdown) {
@@ -562,25 +485,19 @@
              soundToggleButton.addEventListener('click', toggleSound);
          }
 
-         // Configure close window button click handler
+         // Configure Close Window Button - Handles both online exit (to lobby) and local exit (to menu)
          if (closeWindowButton) {
-             // --- FIX: Call resetToModeSelection instead of window.close() ---
-             closeWindowButton.onclick = () => {
-                  console.log("Exit Game button clicked. Resetting to mode selection.");
-
-                  // Clear relevant session storage for local game on exit
-                  sessionStorage.removeItem('gameMode');
-                  sessionStorage.removeItem('botDifficulty');
-
-                  // Call the function that resets the UI and state to the selection screen
-                  resetToModeSelection();
-
-                  // Note: window.close() is unreliable and removed here.
-                  // If the user wants to truly close the browser tab/window, they must do it manually.
-             };
-             // Ensure close button is visible by default
-             closeWindowButton.style.display = 'block';
+             closeWindowButton.onclick = handleExitGameClick; // Assign the shared handler
+             closeWindowButton.style.display = 'block'; // Ensure visible by default
          }
+
+         // Configure Restart Game Button - Handles both online (to lobby) and local (restart mode)
+          if (restartButton) {
+              // Text will be set dynamically by initializeMatchmakingGame or startGameMode
+              restartButton.onclick = handleRestartGameClick; // Assign the shared handler
+              // Initially hide, container display handles this
+              // restartButton.style.display = 'none';
+          }
 
 
          // Initially hide game end buttons container
@@ -591,9 +508,16 @@
          // --- Initial Setup Based on State ---
          const urlParams = new URLSearchParams(window.location.search);
          const modeParam = urlParams.get('mode'); // Check URL first for explicit mode
+         console.log("URL mode parameter:", modeParam); // Log URL param
 
-         // Check if a local game mode is specified in URL or session
-         if (modeParam || local_gameMode) {
+         // Determine initial state: Online game? Local game? Or mode selection?
+         if (mm_roomId && mm_mySymbol) {
+            // --- ONLINE GAME INIT (Resuming via Session Storage) ---
+            console.log("Matchmaking game detected (via session). Initializing online game...");
+            initializeMatchmakingGame(); // This function hides controls, sets online state, and shows the board later
+            document.body.classList.add('game-started'); // Add class
+            // Restart button text/action for online is handled in initializeMatchmakingGame
+         } else if (modeParam || local_gameMode) {
              // --- LOCAL GAME START (via URL param or Session Storage) ---
              console.log(`Local game detected (via URL param "${modeParam || 'none'}" or session "${local_gameMode || 'none'}"). Starting game.`);
              const finalMode = modeParam || local_gameMode; // Use modeParam if present, otherwise session mode
@@ -609,15 +533,10 @@
              }
 
             // If a mode is specified (local game), start it.
-            startGameMode(finalMode); // This function handles board display etc.
+            startGameMode(finalMode); // This function handles resetting local state, setting UI, and starting game flow
             document.body.classList.add('game-started'); // Add class
 
-            // Configure restart button text and action for local games
-             if (restartButton) {
-                 restartButton.textContent = 'Restart Game!';
-                 restartButton.onclick = requestRestartGame; // Assign the local restart function
-             }
-
+            // Restart button text/action for local is handled in startGameMode
          } else {
              // --- SHOWING MODE SELECTION (Default state) ---
              console.log("No active game detected. Showing local game mode selection.");
@@ -626,11 +545,11 @@
          }
 
          // --- Attempt to unlock audio on initial page load if a game is expected to start/resume ---
-         // If a game is being resumed from session storage (local_gameMode set),
+         // If a game is being resumed from session storage (mm_roomId or local_gameMode set),
          // there might not be an immediate user click to startGameMode.
          // Attempting a silent play here might help browsers allow later playback.
          // Only attempt if sound is supposed to be ON and audio element exists
-         if (isSoundOn && local_gameMode && moveSound) {
+         if (isSoundOn && (mm_roomId || local_gameMode) && moveSound) {
              console.log("Attempting initial audio unlock on page load...");
               // Note: This might still be blocked by the browser if no user interaction has occurred at all.
              moveSound.volume = 0.01; // Play at very low volume
@@ -640,9 +559,469 @@
          }
     });
 
+    // --- Shared Button Handlers ---
 
-    // Removed Matchmaking (Online) Game State variables
-    // initializeMatchmakingGame, updateMatchmakingGameStatus, handleOnlineCellClick, enableBoardClicking are removed
+    // Handles the click on the "Restart Game" button
+    function handleRestartGameClick() {
+        console.log("Restart Game button clicked. Checking game mode..."); // Log the click
+
+        // Check if currently in an online game mode (mm_roomId will be set)
+        if (mm_roomId) {
+            console.log("MM: Restart button clicked in online game. Navigating to lobby."); // Log online path
+            // For online games, "Restart" means go back to the lobby (main page)
+            // Clear session storage game state
+            sessionStorage.removeItem('roomId');
+            sessionStorage.removeItem('mySymbol');
+            sessionStorage.removeItem('gameMode'); // Clear local mode too just in case
+            sessionStorage.removeItem('botDifficulty'); // Clear bot difficulty
+            sessionStorage.removeItem('serverId'); // Assuming serverId might also be stored
+
+            // Disconnect socket if connected
+            if(socket && socket.connected) {
+                 socket.disconnect();
+                 console.log("MM: Socket disconnected before navigation.");
+            }
+
+             // Navigate back to lobby (assuming '/' is your lobby page)
+             window.location.href = '/';
+        } else if (local_gameMode) {
+             console.log(`Local: Restart button clicked in local game mode "${local_gameMode}". Restarting game.`); // Log local path
+            // For local games, "Restart" means start a new game in the same mode
+            // local_gameMode holds the current mode ('player' or 'bot')
+            winningCombination = null; // Clear winning highlight before restarting
+            startGameMode(local_gameMode); // Call the function to reset state and UI for a new game
+        } else {
+             console.warn("Restart button clicked, but no active game mode (local or online) detected. Resetting to selection."); // Log unexpected path
+            // Fallback: If somehow clicked when in the selection state, just reset to selection
+            resetToModeSelection();
+        }
+    }
+
+    // Handles the click on the "Exit Game" button
+    function handleExitGameClick() {
+        console.log("Exit Game button clicked. Checking game mode..."); // Log the click
+
+        // Disconnect socket if online game is active (regardless of where we navigate/close)
+        if(mm_roomId && socket && socket.connected) {
+             socket.disconnect();
+             console.log("MM: Socket disconnected before exiting.");
+        }
+
+        // Clear relevant session storage for *any* game type on exit/return to menu/close
+        sessionStorage.removeItem('roomId');
+        sessionStorage.removeItem('mySymbol');
+        sessionStorage.removeItem('gameMode');
+        sessionStorage.removeItem('botDifficulty');
+        sessionStorage.removeItem('serverId'); // Assuming serverId might also be stored
+        console.log("Cleared session storage on Exit."); // Log clear
+
+        // If in an online game, try to go back to the lobby/main page
+        if (mm_roomId) {
+             console.log("MM: Exit button clicked in online game. Navigating to lobby."); // Log online path
+             window.location.href = '/'; // Go back to the main page/lobby
+             // Attempt to focus opener if exists, then close (less reliable and often blocked)
+             if (window.opener && !window.opener.closed) {
+                 window.opener.focus();
+                  // window.close(); // window.close is unreliable if not opened by script
+             }
+        } else {
+            // If in a local game or on the selection screen, return to the selection screen
+            console.log("Local: Exit button clicked. Resetting to mode selection."); // Log local path
+            resetToModeSelection(); // Call the function that resets the UI and state to the selection screen
+             // Note: window.close() is unreliable and removed here. The user must manually close the tab/window.
+        }
+    }
+
+
+    // --- Matchmaking (Online) Game Functions ---
+    // (These require a server-side Socket.IO application to work)
+
+    function initializeMatchmakingGame() {
+        console.log("MM: initializeMatchmakingGame called."); // Log function call
+        console.log("MM: Attempting to initialize matchmaking game socket...");
+        // Connect to the server
+        // The io() function automatically tries to connect to the server that served the HTML file
+        socket = io();
+
+        socket.on('connect', () => {
+            console.log('MM: Socket connected to server with ID:', socket.id);
+            if (statusMessageElement) statusMessageElement.textContent = `Joining Game... You are Player ${mm_mySymbol}.`;
+             // Hide local controls and difficulty selection
+            if (gameControlsElement) gameControlsElement.style.display = 'none';
+            if(botDifficultySelection) botDifficultySelection.style.display = 'none';
+
+            // Set Restart button text for online mode
+             if (restartButton) {
+                  restartButton.textContent = 'Back to Lobby';
+                  console.log("MM: Setting Restart button text to 'Back to Lobby'."); // Log change
+             }
+
+
+            // Send join message to server
+            // Pass serverId if you are using it for multiple game servers (optional)
+             const serverId = sessionStorage.getItem('serverId');
+            socket.emit('joinGameRoom', { roomId: mm_roomId, mySymbol: mm_mySymbol, serverId: serverId });
+             console.log(`MM: Emitted 'joinGameRoom' for room ${mm_roomId}, symbol ${mm_mySymbol}, serverId ${serverId}.`);
+        });
+
+        socket.on('gameState', (data) => {
+            console.log('MM: Received gameState:', data);
+            const previousBoardState = [...mm_currentBoardState]; // Store previous state for sound detection
+            mm_currentBoardState = data.board; // Update board state from server
+            mm_isMyTurn = (data.turn === mm_mySymbol); // Update turn status
+            mm_onlineGameOver = data.gameOver; // Update game over status
+            mm_winner = data.winner || null; // Update winner
+            mm_isDraw = data.isDraw || false; // Update draw status
+            winningCombination = data.winningCombination || null; // Update winning combination for highlighting
+
+            // Show the board container once initial state is received
+            if (boardElement && boardElement.style.display === 'none') {
+                 console.log("MM: Showing board element on first gameState.");
+                 boardElement.style.display = 'grid';
+            }
+             document.body.classList.add('game-started'); // Ensure body class is set
+
+
+            renderBoard(mm_currentBoardState); // Re-render the board with the new state
+            updateMatchmakingGameStatus(); // Update status message based on new state
+            enableBoardClicking(); // Enable/disable clicks based on new state (turn/game over)
+
+            // --- Play Sounds based on State Change ---
+             if (mm_onlineGameOver) {
+                 // Play win/loss sound only if a winner is declared (not on disconnect unless server sends winner)
+                 if (mm_winner) {
+                      if (mm_winner === mm_mySymbol) { // I won
+                          playWinSound();
+                      } else { // Opponent won
+                          playLossSound();
+                      }
+                 }
+                 // Draw sound removed as per requested files
+
+             } else {
+                 // Play move sound if the board state has changed and it's now the opponent's turn (or my turn after my move was processed)
+                 // A simple way to detect a new move is if the number of non-null cells increased.
+                 const previousFilled = previousBoardState.filter(cell => cell !== null).length;
+                 const currentFilled = mm_currentBoardState.filter(cell => cell !== null).length;
+
+                 if (currentFilled > previousFilled) {
+                      playMoveSound();
+                 }
+             }
+
+
+             // Show/hide end game buttons container based on online game state
+             if (gameEndButtonsContainer) {
+                  // Show if the game is explicitly marked as over by the server
+                  gameEndButtonsContainer.style.display = mm_onlineGameOver ? 'flex' : 'none';
+                  console.log("MM: gameState handler: Setting gameEndButtonsContainer display to", gameEndButtonsContainer.style.display);
+             }
+        });
+
+        // 'moveMade' event - useful for immediate feedback, but 'gameState' is the source of truth
+        socket.on('moveMade', (data) => {
+            console.log('MM: Received moveMade (typically followed by gameState):', data);
+             // Usually, you'd wait for the gameState update, but you could potentially
+             // apply the move visually here optimistically before the full gameState arrives.
+             // For now, we rely on gameState being sent immediately after.
+        });
+
+        socket.on('invalidMove', (data) => {
+            console.warn('MM: Invalid move received from server:', data.message);
+            if (statusMessageElement) {
+                 const originalStatusText = statusMessageElement.textContent;
+                 statusMessageElement.textContent = `Invalid Move: ${data.message}`;
+                 // Briefly show the error, then revert status after a delay
+                 setTimeout(() => {
+                     // Only revert if the message hasn't changed again
+                     if (statusMessageElement.textContent === `Invalid Move: ${data.message}`) {
+                          updateMatchmakingGameStatus(); // Revert to actual game status
+                     }
+                  }, 3000); // Show error for 3 seconds
+             }
+             // Board state likely hasn't changed, re-enable clicks client-side if they were optimistically disabled
+             enableBoardClicking(); // Ensure clicks are correct based on current state
+        });
+
+        socket.on('opponentDisconnected', (data) => {
+             console.log('MM: Opponent disconnected event received:', data.message);
+             // Only show this if the game wasn't already over by winning/draw
+             if (!mm_onlineGameOver) {
+                 mm_onlineGameOver = true; // Mark game as over on client side
+                 mm_isMyTurn = false; // Ensure no more moves can be made
+
+                 if (statusMessageElement) {
+                    statusMessageElement.textContent = `Opponent disconnected: ${data.message || 'Game ended.'}`;
+                 }
+                 // Show end game buttons
+                 if (gameEndButtonsContainer) {
+                     gameEndButtonsContainer.style.display = 'flex';
+                     console.log("MM: opponentDisconnected: Setting gameEndButtonsContainer display to flex.");
+                 }
+                 enableBoardClicking(); // Disable board clicks
+                 // Note: Restart button is already 'Back to Lobby'
+             }
+        });
+
+         socket.on('gameEnded', (data) => {
+              console.log('MM: Game ended event received:', data);
+              // This event confirms the final state (win/draw) and potentially the winner/combination
+              mm_onlineGameOver = true;
+              mm_winner = data.winner || null;
+              mm_isDraw = data.isDraw || false;
+              winningCombination = data.winningCombination || null;
+              mm_isMyTurn = false; // Game is over
+
+              // If this event includes the final board state, render it.
+              // Otherwise, rely on the last 'gameState' or `moveMade` update.
+              if (data.board) mm_currentBoardState = data.board;
+
+              renderBoard(mm_currentBoardState); // Ensure final state is rendered
+              updateMatchmakingGameStatus(); // Update status message
+              enableBoardClicking(); // Disable board clicks
+
+              // Play sounds based on final state if not already played by gameState handler
+              // The gameState handler should be playing sounds based on the game being over,
+              // but adding redundancy here is safe if gameState wasn't the *absolute* final state update.
+              if (mm_winner) {
+                  if (mm_winner === mm_mySymbol) {
+                      playWinSound();
+                  } else {
+                      playLossSound();
+                  }
+              }
+               // Draw sound removed
+
+              // Show end game buttons
+              if (gameEndButtonsContainer) {
+                   gameEndButtonsContainer.style.display = 'flex';
+                   console.log("MM: gameEnded: Setting gameEndButtonsContainer display to flex.");
+              }
+               // Restart button should already be 'Back to Lobby'
+         });
+
+
+        socket.on('serverError', (data) => {
+            console.error('MM: Server Error in game:', data.message);
+            // Display error and end game state on client
+            if (statusMessageElement) statusMessageElement.textContent = `Error: ${data.message}. Please return to lobby.`;
+            mm_onlineGameOver = true;
+            mm_isMyTurn = false;
+             // Show end game buttons
+            if (gameEndButtonsContainer) {
+                 gameEndButtonsContainer.style.display = 'flex';
+                  console.log("MM: serverError: Setting gameEndButtonsContainer display to flex.");
+            }
+            enableBoardClicking(); // Disable board clicks
+             // Restart button should already be 'Back to Lobby'
+        });
+
+        socket.on('disconnect', (reason) => {
+            console.log('MM: Socket disconnected:', reason);
+            // Only update status if game wasn't already explicitly ended by server event
+            if (!mm_onlineGameOver && statusMessageElement) {
+                statusMessageElement.textContent = `Disconnected (${reason}). Check connection or return to lobby.`;
+            }
+            // Ensure board is not clickable if disconnected
+            mm_isMyTurn = false; // Assume not my turn if disconnected
+            mm_onlineGameOver = true; // Mark game as over client-side on disconnect
+            // Show end game buttons
+            if (gameEndButtonsContainer) {
+                 gameEndButtonsContainer.style.display = 'flex'; // Show end buttons on unexpected disconnect too
+                 console.log("MM: disconnect: Setting gameEndButtonsContainer display to flex.");
+            }
+            enableBoardClicking(); // Disable board clicks
+             // Restart button should already be 'Back to Lobby'
+        });
+
+        socket.on('connect_error', (err) => {
+            console.error('MM: Connection Error:', err);
+            // Display error and end game state on client
+            if (statusMessageElement) statusMessageElement.textContent = 'Could not connect to game server. Please try again.';
+            mm_onlineGameOver = true;
+            mm_isMyTurn = false;
+             // Show end game buttons
+            if (gameEndButtonsContainer) {
+                 gameEndButtonsContainer.style.display = 'flex';
+                  console.log("MM: connect_error: Setting gameEndButtonsContainer display to flex.");
+            }
+            enableBoardClicking(); // Disable board clicks
+             // Restart button should already be 'Back to Lobby'
+        });
+    }
+
+    function updateMatchmakingGameStatus() {
+        console.log("MM: Updating game status. Winner:", mm_winner, "Draw:", mm_isDraw, "Game Over:", mm_onlineGameOver, "My Turn:", mm_isMyTurn, "My Symbol:", mm_mySymbol);
+        if (!statusMessageElement) {
+            console.warn("MM: Status message element not found.");
+            return;
+        }
+
+        // Check for win, draw, or other game over states first
+        if (mm_winner) {
+            statusMessageElement.textContent = mm_winner === mm_mySymbol ? `You (${mm_mySymbol}) WIN! Awesome Funky Win!` : `Player ${mm_winner} wins. Better luck next time!`;
+        } else if (mm_isDraw) {
+             statusMessageElement.textContent = "It's a Draw! Super Funky Tie!";
+        } else if (mm_onlineGameOver) {
+             // If game is over but no winner/draw (e.g., opponent disconnected, server error)
+             // Keep the existing status message from those specific events if they set one.
+             // If a specific message isn't set, use a generic one.
+              if (!statusMessageElement.textContent.includes("Disconnected") &&
+                  !statusMessageElement.textContent.includes("Error") &&
+                   !statusMessageElement.textContent.includes("Game ended.")) {
+                   statusMessageElement.textContent = "Game ended."; // Generic end message if no specific one set
+              }
+        } else if (mm_isMyTurn) {
+            statusMessageElement.textContent = `Your turn (${mm_mySymbol})! Make a Funky Move!`;
+        } else {
+            // Game is active, not my turn
+            const opponentSymbol = mm_mySymbol === PLAYER_X ? PLAYER_O : PLAYER_X; // Determine opponent symbol
+             if (opponentSymbol) { // Ensure opponentSymbol is valid
+                statusMessageElement.textContent = `Waiting for Opponent (${opponentSymbol})'s funky move...`;
+             } else {
+                 statusMessageElement.textContent = `Waiting for Opponent...`; // Fallback message
+             }
+        }
+         console.log("MM: Status message set to:", statusMessageElement.textContent); // Log final status text
+
+         // Control visibility of game end buttons container based on online game state
+         if (gameEndButtonsContainer) {
+             // Show if the game is explicitly marked as over by the server
+            gameEndButtonsContainer.style.display = mm_onlineGameOver ? 'flex' : 'none';
+             console.log("MM: updateMatchmakingGameStatus: Setting gameEndButtonsContainer display to", gameEndButtonsContainer.style.display);
+         }
+          // Set Restart button text for online mode (redundant here, but safe)
+          if (restartButton && mm_onlineGameOver) { // Only set if game is actually over online
+               restartButton.textContent = 'Back to Lobby';
+               console.log("MM: Setting Restart button text to 'Back to Lobby' because game is over online.");
+          }
+    }
+
+    // Handles UI click events *only* for online mode
+    function handleOnlineCellClick(event) {
+         // Get the index from the cell's data attribute
+         const index = parseInt(event.target.dataset.index);
+         if (isNaN(index)) {
+              console.error("MM Click: Invalid cell index from data attribute:", event.target.dataset.index);
+              return;
+         }
+
+         console.log(`MM Click: Clicked cell ${index}. My Turn: ${mm_isMyTurn}, Game Over: ${mm_onlineGameOver}, Cell Taken: ${mm_currentBoardState && mm_currentBoardState[index] !== null}`);
+
+        if (mm_onlineGameOver) {
+             console.log('Client check: MM Game over, ignoring move click.');
+             // Briefly indicate game is over if they try clicking
+             if (statusMessageElement) {
+                  // Capture the current status before briefly showing the "Game is over!" message
+                  const originalStatusText = statusMessageElement.textContent;
+                  statusMessageElement.textContent = "Game is over!";
+                  setTimeout(() => {
+                       // Check if the status message is still the one we set before reverting
+                       if (statusMessageElement.textContent === "Game is over!") {
+                          updateMatchmakingGameStatus(); // Revert to the correct status based on game state
+                       }
+                  }, 1500);
+             }
+             return;
+        }
+        if (!mm_isMyTurn) {
+            console.log('Client check: Not my turn, ignoring move click.');
+             if (statusMessageElement) {
+                  // Capture the current status before briefly showing "Not your turn!" message
+                  const originalStatusText = statusMessageElement.textContent;
+                  statusMessageElement.textContent = "Not your turn!";
+                  setTimeout(() => {
+                       // Check if the status message is still the one we set before reverting
+                      if (statusMessageElement.textContent === "Not your turn!") {
+                         updateMatchmakingGameStatus(); // Revert to actual game status
+                      }
+                   }, 1500);
+             }
+            return;
+        }
+         // Check if the cell is valid and empty according to the *current client state*
+         // The server will do the final validation, but this provides immediate feedback.
+         if (!mm_currentBoardState || mm_currentBoardState[index] !== null) {
+             console.log('Client check: Cell is already taken or board state missing, ignoring move click.');
+              if (statusMessageElement && mm_currentBoardState && mm_currentBoardState[index] !== null) {
+                    // Capture the current status before briefly showing "Cell already taken!" message
+                   const originalStatusText = statusMessageElement.textContent;
+                    statusMessageElement.textContent = "Cell already taken!";
+                    setTimeout(() => {
+                        // Check if the status message is still the one we set before reverting
+                        if (statusMessageElement.textContent === "Cell already taken!") {
+                           updateMatchmakingGameStatus(); // Revert to actual game status
+                        }
+                   }, 1500);
+              }
+             return;
+         }
+
+        // If client-side checks pass, emit the move to the server
+        if (socket && socket.connected) {
+            socket.emit('makeMove', { roomId: mm_roomId, cellIndex: index });
+            console.log(`MM: Emitted 'makeMove' for cell ${index} in room ${mm_roomId}.`);
+            // Optimistically update status, waiting for server response
+            if(statusMessageElement) statusMessageElement.textContent = "Move sent, waiting for server response...";
+            // Optimistically disable clicks until server confirms with a new gameState
+            enableBoardClicking(); // This will disable clicks because mm_isMyTurn will likely become false soon (server will switch turn)
+        } else {
+             console.error("MM: Socket not connected, cannot send move.");
+             if(statusMessageElement) statusMessageElement.textContent = "Connection error. Cannot send move.";
+             // If disconnected, should already be handled by disconnect/connect_error events setting game over
+        }
+    }
+
+
+    // Controls which cells are clickable in online game mode
+    function enableBoardClicking() {
+        // This function is specifically for online games. Local games use enableLocalBoardClicking.
+        // Check mm_roomId to ensure this logic only runs IN online mode
+        if (!mm_roomId) {
+             // console.log("MM: enableBoardClicking: Not in an online game, ignoring call."); // Suppress log
+             // If not in an online game context, this function should do nothing.
+             // Clickability for local/selection is handled by enableLocalBoardClicking.
+             return;
+        }
+         console.log("MM: enableBoardClicking called (Online)."); // Log function call
+
+
+         if (!boardElement || !mm_currentBoardState) {
+             console.warn("MM: enableBoardClicking: Board element or board state missing.");
+             return;
+         }
+
+        // In online mode, the board is clickable only if it's my turn AND the game is not over
+        const canClickBoard = mm_isMyTurn && !mm_onlineGameOver;
+        // console.log(`MM: enableBoardClicking: My Turn: ${mm_isMyTurn}, Game Over: ${mm_onlineGameOver}. Can Click Board: ${canClickBoard}`); // Suppress logging
+
+        // Apply pointer-events to the entire board element container
+        // This is the primary control for enabling/disabling clicks on the whole board
+        boardElement.style.pointerEvents = canClickBoard ? 'auto' : 'none';
+         console.log(`MM: Setting board pointer-events for clicks to ${canClickBoard ? 'auto' : 'none'}. State: MyTurn=${mm_isMyTurn}, GameOver=${mm_onlineGameOver}`); // Log clickability state
+
+
+        // Add/remove 'clickable' class based on state and turn for visual feedback (hover effect)
+        // The pointer-events on the board container handle the actual clickability,
+        // but the class helps style available cells.
+        const cells = boardElement.querySelectorAll('.cell');
+        cells.forEach((cell, index) => {
+              const isCellEmpty = mm_currentBoardState[index] === null;
+
+              // A cell is visually 'clickable' if the whole board is clickable for the player AND the cell is empty
+              if (canClickBoard && isCellEmpty) {
+                   // Add clickable class and ensure pointer events are enabled *on the cell* if the board is clickable
+                   cell.classList.add('clickable');
+                   cell.style.pointerEvents = 'auto';
+              } else {
+                  // Remove clickable class and ensure pointer events are disabled *on the cell*
+                  cell.classList.remove('clickable');
+                  cell.style.pointerEvents = 'none';
+              }
+        });
+         console.log("MM: Updated cell clickable classes/pointer-events."); // Log cell updates
+    }
+
 
     // --- Local Game Functions ---
 
@@ -650,8 +1029,25 @@
     function startGameMode(mode) {
         console.log(`Local: startGameMode called with mode: ${mode}`); // Log start of function
 
-        // --- Clean up potential lingering state (no online state anymore) ---
-        // Any old local game state will be overwritten below.
+        // --- Clean up potential lingering state (online or old local) ---
+        // Ensure online state is reset if starting a local game
+        mm_roomId = null;
+        mm_mySymbol = null;
+        sessionStorage.removeItem('roomId');
+        sessionStorage.removeItem('mySymbol');
+        sessionStorage.removeItem('serverId');
+        if(socket && socket.connected) {
+             socket.disconnect();
+             console.log("Local: Disconnected socket from previous online game (if any).");
+        }
+         // Reset online game state variables
+         mm_currentBoardState = Array(N * N).fill(null);
+         mm_isMyTurn = false;
+         mm_onlineGameOver = false;
+         mm_winner = null;
+         mm_isDraw = false;
+         // winningCombination is used by both, reset below
+
 
         // --- Set up local game state ---
         local_gameMode = mode;
@@ -673,6 +1069,8 @@
         local_currentTurnSymbol = PLAYER_X; // X always starts local games
         local_gameOver = false;
         winningCombination = null; // Reset winning combination
+        console.log("Local: Reset local game state variables."); // Log state reset
+
 
          // --- Attempt to unlock audio playback using the user's click on the mode button ---
          // This is the best place to try and "unlock" audio using a direct user gesture.
@@ -691,6 +1089,7 @@
         if (gameControlsElement) gameControlsElement.style.display = 'none';
         console.log("Local: Hiding game controls."); // Log UI change
 
+        // Hide bot difficulty selection when game starts
         if(botDifficultySelection) botDifficultySelection.style.display = 'none';
         console.log("Local: Hiding bot difficulty selection."); // Log UI change
 
@@ -714,6 +1113,7 @@
          // Ensure restart button text is correct for local game
          if (restartButton) {
               restartButton.textContent = 'Restart Game!';
+              console.log("Local: Setting Restart button text to 'Restart Game!'."); // Log change
               // Event listener is set in DOMContentLoaded for local mode
          }
 
@@ -810,7 +1210,7 @@
 
         // Update status message and switch turn ONLY if game is NOT over
         updateLocalGameStatus(); // Update status message based on new state
-        console.log("Local: Called updateLocalGameStatus."); // Log function call
+        console.log("Local: Called updateLocalGameStatus after move."); // Log function call
 
 
         if (local_gameOver) {
@@ -912,7 +1312,7 @@
              if (winningCombination) {
                   // Get winner symbol from a winning cell, assuming winningCombination is set
                   // Defensive check: ensure winningCombination is valid before using it
-                  const winner = (winningCombination && winningCombination.length > 0) ? local_cells[winningCombination[0]] : null;
+                  const winner = (winningCombination && Array.isArray(winningCombination) && winningCombination.length > 0) ? local_cells[winningCombination[0]] : null;
                   if (winner) {
                       statusMessageElement.textContent = `${winner} is the WINNER! Awesome Funky Win!`;
                   } else {
@@ -944,10 +1344,16 @@
 
 
     // Controls which cells are clickable in local game modes and selection screen
-    // Only local_gameMode exists now, so this function is the primary click controller
+    // This function is for local games and the initial selection state.
+    // Online mode uses enableBoardClicking.
     function enableLocalBoardClicking() {
-         // Removed mm_roomId check
-         console.log("enableLocalBoardClicking called."); // Log function call
+         // Check mm_roomId to ensure this logic only runs OUTSIDE of online mode
+        if (mm_roomId) {
+             // console.log("enableLocalBoardClicking: In online mode, ignoring call."); // Suppress log
+             return;
+        }
+         console.log("enableLocalBoardClicking called (Local/Selection)."); // Log function call
+
 
          if (!boardElement) {
              console.warn("enableLocalBoardClicking: Board element not found.");
@@ -955,9 +1361,12 @@
          }
 
         // Determine if human clicks should be allowed on the board container level
-        // Clicks are allowed on the board container only if a local game mode is active AND
-        // (it's PlayerVsPlayer mode) OR (it's Bot mode AND it's the human player's (X's) turn)
-        // If local_gameMode is '', the board container pointer-events will be 'none'.
+        // Clicks are allowed on the board container only if:
+        // 1. A local game mode is currently active (`local_gameMode !== ''`)
+        // AND
+        // 2. Game is NOT over (`!local_gameOver`)
+        // AND
+        // 3. (It's PlayerVsPlayer mode) OR (It's Bot mode AND it's the human player's (X's) turn)
          const canHumanClickOnBoardContainer = local_gameMode !== '' && !local_gameOver && (local_gameMode === 'player' || (local_gameMode === 'bot' && local_currentTurnSymbol === PLAYER_X));
 
          boardElement.style.pointerEvents = canHumanClickOnBoardContainer ? 'auto' : 'none';
@@ -989,9 +1398,9 @@
     function botMove() {
          console.log(`Local Bot: BotMove function called. Difficulty: ${local_botDifficulty}`);
          // Ensure it's local bot mode, game is not over, and it's O's turn
-         // Removed mm_roomId check
-         if (local_gameOver || local_gameMode !== 'bot' || local_currentTurnSymbol !== PLAYER_O) {
-              console.log("Local Bot: Conditions not met for bot move. Exiting.", { local_gameOver, local_gameMode, local_currentTurnSymbol });
+         // Check mm_roomId to ensure this only runs in local mode
+         if (mm_roomId || local_gameOver || local_gameMode !== 'bot' || local_currentTurnSymbol !== PLAYER_O) {
+              console.log("Local Bot: Conditions not met for bot move. Exiting.", { mm_roomId, local_gameOver, local_gameMode, local_currentTurnSymbol });
               // If somehow called in wrong state, ensure clickability is correct based on current (wrong) state
               enableLocalBoardClicking();
               return;
@@ -1098,55 +1507,17 @@
          // This function finds the best move *index* at the root (depth 0).
 
          const availableCells = getAvailableCells(board);
-         let bestScore = -Infinity; // Bot wants to maximize score
-         let bestMoveIndex = -1;
+         let bestScore = isMaximizingPlayer ? -Infinity : Infinity; // Max player wants highest score, Min player wants lowest
+         let bestMoveIndex = -1; // Only used at depth 0
 
          // console.log("Local Bot (Hard/Minimax): Starting root search..."); // Avoid spamming console
 
-         // Shuffle available cells for some variety on equally scored moves at the root
-         shuffleArray(availableCells);
+         // Base Case: Check for terminal states or max depth
+         // Check for win for the player *who just made the move* (the player opposite of the current isMaximizingPlayer state).
+         const playerWhoJustMoved = isMaximizingPlayer ? opponentSymbol : mySymbol;
+         const winnerInfo = checkForWinner(playerWhoJustMoved, board);
 
-         for (const index of availableCells) {
-             const newBoard = [...board];
-             newBoard[index] = mySymbol; // Simulate bot's move (Maximizing player)
-
-             // Call minimax for the opponent's turn (minimizing player)
-             // Start recursive calls from depth 1 (after the root move)
-             const evaluation = minimax(newBoard, depth + 1, false, alpha, beta, mySymbol, opponentSymbol);
-
-             // console.log(`Minimax: Root move ${index} evaluation: ${evaluation}`); // Avoid spamming console
-
-             // Find the move that maximizes the bot's score at the root
-             if (evaluation > bestScore) {
-                 bestScore = evaluation;
-                 bestMoveIndex = index;
-             }
-             alpha = Math.max(alpha, evaluation); // Update alpha at the root
-             // No beta check needed at the root level of the initial call
-         }
-
-          // If no move resulted in a score change or if all moves lead to the same score,
-          // pick the first available move (which is already shuffled).
-         if (bestMoveIndex === -1 && availableCells.length > 0) {
-              bestMoveIndex = availableCells[0];
-              console.warn("Minimax did not find a unique best move at depth 0, picking first available (shuffled):", bestMoveIndex);
-         }
-
-
-         console.log(`Local Bot (Hard/Minimax): Best move found: ${bestMoveIndex} with score ${bestScore}`);
-         return { index: bestMoveIndex, score: bestScore };
-    }
-
-    // The recursive Minimax algorithm function
-    function minimax(board, depth, isMaximizingPlayer, alpha, beta, mySymbol, opponentSymbol) {
-        // console.log(`Minimax: Depth ${depth}, isMaximizing: ${isMaximizingPlayer}, Alpha: ${alpha}, Beta: ${beta}`); // Log calls for debugging
-
-        // Base Case: Check for terminal states or max depth
-        // Check for win for the player *who just made the move* (the player opposite of the current isMaximizingPlayer state).
-        const playerWhoJustMoved = isMaximizingPlayer ? opponentSymbol : mySymbol;
-        const winnerInfo = checkForWinner(playerWhoJustMoved, board);
-
-        if (winnerInfo) {
+         if (winnerInfo) {
              // Terminal state found (win/loss)
              if (winnerInfo.player === mySymbol) { // If *mySymbol* won (bot's symbol)
                   // Bot wins. Positive score. Adjust by depth to prefer faster wins.
@@ -1161,7 +1532,7 @@
         }
 
 
-        if (!getAvailableCells(board).length) {
+        if (!availableCells.length) {
             return SCORES.draw; // Draw (board is full)
         }
 
@@ -1174,34 +1545,51 @@
         }
 
         // Recursive Step
-        const availableCells = getAvailableCells(board);
+        // Get moves relevant to the current player (Maximizing=bot, Minimizing=opponent)
+        const currentPlayerSymbol = isMaximizingPlayer ? mySymbol : opponentSymbol;
+        const nextIsMaximizing = !isMaximizingPlayer; // Next turn switches player type
+
 
         if (isMaximizingPlayer) { // Bot's turn (Maximizing player)
             let maxEval = -Infinity;
-            // Iterate through available moves for the current player
-            for (const index of availableCells) {
+            // Iterate through available moves
+             // Shuffle available cells at the root depth for variety, otherwise process normally
+            const cellsToEvaluate = depth === 0 ? shuffleArray([...availableCells]) : availableCells;
+
+            for (const index of cellsToEvaluate) {
                 const newBoard = [...board];
-                newBoard[index] = mySymbol; // Simulate current player's move (bot)
+                newBoard[index] = currentPlayerSymbol; // Simulate current player's move
 
                 // Call minimax for the opponent's turn (minimizing player)
-                const evaluation = minimax(newBoard, depth + 1, false, alpha, beta, mySymbol, opponentSymbol);
-                maxEval = Math.max(maxEval, evaluation);
+                const evaluation = minimax(newBoard, depth + 1, nextIsMaximizing, alpha, beta, mySymbol, opponentSymbol);
+
+                // console.log(`Minimax: Depth ${depth}, Move ${index} evaluation: ${evaluation}`); // Avoid spamming console
+
+                if (evaluation > maxEval) {
+                    maxEval = evaluation;
+                    if (depth === 0) { // Only record the move index at the root level (depth 0)
+                        bestMoveIndex = index;
+                    }
+                }
                 alpha = Math.max(alpha, evaluation); // Update alpha
                 if (beta <= alpha) {
                      // console.log("Minimax: Alpha-beta pruning branch cut (Maximizing)."); // Suppress logging
                     break; // Alpha-beta pruning
                 }
             }
-            return maxEval;
+             // At the root (depth 0), return the move index and score.
+             // In recursive calls (depth > 0), just return the score.
+            return depth === 0 ? { index: bestMoveIndex, score: maxEval } : maxEval;
+
         } else { // Opponent's turn (Minimizing player)
             let minEval = Infinity;
              // Iterate through available moves for the current player
             for (const index of availableCells) {
                 const newBoard = [...board];
-                newBoard[index] = opponentSymbol; // Simulate current player's move (opponent)
+                newBoard[index] = currentPlayerSymbol; // Simulate current player's move
 
                 // Call minimax for the bot's turn (maximizing player)
-                const evaluation = minimax(newBoard, depth + 1, true, alpha, beta, mySymbol, opponentSymbol);
+                const evaluation = minimax(newBoard, depth + 1, nextIsMaximizing, alpha, beta, mySymbol, opponentSymbol);
                 minEval = Math.min(minEval, evaluation);
                 beta = Math.min(beta, evaluation); // Update beta
                 if (beta <= alpha) {
@@ -1321,70 +1709,93 @@
 
 
     // Initiates a restart for the local game mode or resets to selection
+    // NOTE: This function is called internally for local game restarts (e.g., after a move).
+    // The "Restart Game" BUTTON click handler is `handleRestartGameClick`.
     function requestRestartGame() {
-        console.log("requestRestartGame called (Restart Game button clicked)."); // Log button click
+         console.log("requestRestartGame called (Internal Local Restart)."); // Log function call
 
         // Logic for restarting local game mode
         if (local_gameMode) {
-            console.log(`Local: Restarting mode: ${local_gameMode}`); // Log which mode is restarting
+            console.log(`Local: Restarting mode: ${local_gameMode} via internal request.`); // Log which mode is restarting
             // Clear winning combination and re-call startGameMode with the current mode
             winningCombination = null; // Clear highlight
             startGameMode(local_gameMode); // This will reset state and UI
         } else {
-             console.warn("Local: Restart button clicked, but no local game mode detected. Resetting to mode selection."); // Log unexpected state
-             // Fallback: if restart is somehow clicked when in the selection state, just reset to selection
+             console.warn("Internal requestRestartGame called with no active local game mode. Resetting to selection."); // Log unexpected state
+             // Fallback: If somehow called when in the selection state, just reset to selection
              resetToModeSelection();
         }
     }
 
 
      // Central function to reset the UI and state to the mode selection screen
-     // Used on initial load if no game is active, or when exiting a local game via the "Back to Menu" button or fallback restart.
+     // Used on initial load if no game is active, or when exiting a local game via a "Back to Menu" button or fallback restart.
      function resetToModeSelection() {
           console.log("resetToModeSelection called."); // Log function call
 
-          // Clear local game state
+          // --- Clean up ALL game state (local and online) ---
           local_cells.fill(null);
           local_gameOver = false;
           local_currentTurnSymbol = PLAYER_X; // Reset turn symbol (though not used in this state)
           winningCombination = null; // Clear winning highlight
           local_gameMode = ''; // Explicitly set mode to none for selection screen
-          console.log("Local: Resetting game state variables."); // Log state reset
+          console.log("Reset: Local game state variables cleared."); // Log state reset
 
           // Clear local game session storage
           sessionStorage.removeItem('gameMode');
           sessionStorage.removeItem('botDifficulty');
-          console.log("Local: Cleared session storage (gameMode, botDifficulty)."); // Log session storage clear
+          console.log("Reset: Cleared local game session storage."); // Log session storage clear
+
+          // Also clear online game state and session storage (belt and suspenders)
+          mm_roomId = null;
+          mm_mySymbol = null;
+          mm_currentBoardState.fill(null);
+          mm_isMyTurn = false;
+          mm_onlineGameOver = false;
+          mm_winner = null;
+          mm_isDraw = false;
+          sessionStorage.removeItem('roomId');
+          sessionStorage.removeItem('mySymbol');
+          sessionStorage.removeItem('serverId');
+          if(socket && socket.connected) {
+               socket.disconnect();
+               console.log("Reset: Disconnected socket from previous online game (if any).");
+          }
+           console.log("Reset: Online game state variables and session storage cleared."); // Log state reset
 
 
           // --- Update UI to show selection screen ---
           if(gameControlsElement) gameControlsElement.style.display = 'flex'; // Show mode selection buttons
-          console.log("Local: Showing game controls."); // Log UI change
+          console.log("Reset: Showing game controls."); // Log UI change
 
           // Show bot difficulty selection as it's part of the local mode selection
           if(botDifficultySelection) botDifficultySelection.style.display = 'flex';
-          console.log("Local: Showing bot difficulty selection."); // Log UI change
+          console.log("Reset: Showing bot difficulty selection."); // Log UI change
 
           if(gameEndButtonsContainer) gameEndButtonsContainer.style.display = 'none'; // Hide end buttons
-          console.log("Local: Hiding game end buttons container."); // Log UI change
+          console.log("Reset: Hiding game end buttons container."); // Log UI change
 
 
            // Crucially: HIDE THE BOARD when showing the controls
            if(boardElement) {
                boardElement.style.display = 'none';
-               console.log("Local: Hiding board element."); // Log UI change
+               console.log("Reset: Hiding board element."); // Log UI change
            } else {
                 console.error("Board element not found!");
            }
 
+           // Render an empty board state even if hidden, to clear any symbols/highlights
+           renderBoard(local_cells); // Render empty cells
+           // Note: renderBoard calls enableLocalBoardClicking which will correctly disable clicks as local_gameMode is ''
+
           // Update status message using the helper function
           updateLocalGameStatus(); // This will set the "Select a mode..." message
-          console.log("Local: Called updateLocalGameStatus after reset."); // Log function call
+          console.log("Reset: Called updateLocalGameStatus."); // Log function call
 
 
           // Remove body class indicating game is active
           document.body.classList.remove('game-started');
-          console.log("Local: Removed 'game-started' class from body."); // Log class change
+          console.log("Reset: Removed 'game-started' class from body."); // Log class change
 
            // Reset dropdown value visually (optional)
            if (botDifficultyDropdown) botDifficultyDropdown.value = 'easy'; // Or the default you prefer
@@ -1517,8 +1928,8 @@
         // Clear existing cells from the DOM
         boardElement.innerHTML = '';
          // Set grid dimensions based on N (redundant if in CSS, but safe)
-         boardElement.style.gridTemplateColumns = `repeat(${N}, auto)`; // Use auto to let cell width define column size
-         boardElement.style.gridTemplateRows = `repeat(${N}, auto)`;
+         boardElement.style.gridTemplateColumns = `repeat(${N}, 1fr)`;
+         boardElement.style.gridTemplateRows = `repeat(${N}, 1fr)`;
 
         // Validate input board state
         if (!boardToRender || !Array.isArray(boardToRender) || boardToRender.length !== N * N) {
@@ -1543,8 +1954,17 @@
                  cellElement.style.pointerEvents = 'none';
             }
 
-            // Add click listener - Always use the local handler now
-            cellElement.addEventListener('click', handleLocalCellClick);
+            // Add click listener - Use the appropriate handler based on game mode
+            // Attach a single handler that checks the current game state (mm_roomId or local_gameMode)
+            cellElement.addEventListener('click', (event) => {
+                 if (mm_roomId) { // Check if online game is active
+                     handleOnlineCellClick(event); // Pass the event object
+                 } else if (local_gameMode) { // Check if a local game mode is active
+                      handleLocalCellClick(event); // Pass the event object
+                 }
+                 // If no mode is set (selection screen), clicks are effectively ignored by the handlers' internal checks
+            });
+
 
             boardElement.appendChild(cellElement);
 
@@ -1556,8 +1976,12 @@
         });
 
         // After rendering, update clickability based on the current game mode/state
-        // Only local mode logic is needed now
-        enableLocalBoardClicking(); // Local click logic (enabled for human turns unless game over or selection state)
+        if (mm_roomId) {
+             enableBoardClicking(); // Online click logic
+        } else { // Local game or mode selection state
+             enableLocalBoardClicking(); // Local click logic (enabled for human turns unless game over or selection state)
+        }
+         console.log("renderBoard completed. Clickability updated."); // Log completion
     }
 
 
