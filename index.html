@@ -14,8 +14,11 @@
   <style>
     /* --- General Styles --- */
     body {
-      background: linear-gradient(135deg, #f3ec78, #af4261); /* Funky gradient background */
-      color: #333;
+      /* New vibrant theme background - darker and more muted gradient like the website background */
+      background: linear-gradient(135deg, #1a2a3a, #2a3a4a); /* Example dark gradient */
+      background-size: 200% 200%;
+      animation: gradientAnimation 10s ease infinite alternate; /* Simple oscillation */
+      color: #eee; /* Light text on dark background */
       font-family: 'Segoe UI', 'Arial', sans-serif;
       display: flex;
       flex-direction: column;
@@ -26,10 +29,9 @@
       padding: 20px;
       box-sizing: border-box;
       overflow-y: auto; /* Allow scrolling if content exceeds viewport */
-      animation: backgroundGradient 10s ease infinite alternate; /* Animated background */
     }
 
-    @keyframes backgroundGradient {
+     @keyframes gradientAnimation {
         0% { background-position: 0% 50%; }
         100% { background-position: 100% 50%; }
     }
@@ -44,24 +46,27 @@
 
     /* --- Game Container --- */
     .game-container {
-      background-color: rgba(255, 255, 255, 0.95); /* Slightly transparent white background */
+      /* Lighter container on dark background */
+      background-color: rgba(255, 255, 255, 0.98); /* Almost opaque white */
       padding: 30px; /* Increased padding */
       border-radius: 20px; /* More rounded corners */
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); /* Stronger shadow */
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); /* Stronger shadow */
       display: flex;
       flex-direction: column;
       align-items: center;
       max-width: 95%; /* Limit max width */
       width: auto; /* Adjust width based on content */
       position: relative; /* For potential positioning of elements */
-      border: 5px solid #ff6f00; /* Adding a border */
+      /* Vibrant border matching website accents */
+      border: 5px solid #1db954; /* Vibrant green border */
+      color: #333; /* Dark text inside container */
     }
 
     /* --- Branding --- */
     .branding {
       font-size: 3em; /* Larger font size */
       font-weight: bold;
-      color: #1db954; /* Keep green */
+      color: #1db954; /* Vibrant green like logo */
       margin-bottom: 20px;
       align-self: center; /* Center branding */
       font-family: 'Bangers', cursive;
@@ -69,7 +74,7 @@
       text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.1); /* Add subtle text shadow */
     }
     .branding span {
-        color: #ff6f00; /* Keep orange */
+        color: #ff6f00; /* Vibrant orange/yellow */
         text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.1); /* Add subtle text shadow */
     }
 
@@ -83,7 +88,7 @@
       font-weight: bold;
       font-family: 'Permanent Marker', cursive;
       padding: 10px 20px; /* Add padding */
-      border: 2px dashed #ff6f00; /* Dashed border */
+      border: 2px dashed #ff6f00; /* Dashed orange border */
       background-color: #fff9c4; /* Light yellow background */
       border-radius: 8px;
       box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
@@ -102,7 +107,7 @@
     .game-controls button, .restart-btn, .close-btn, .sound-toggle-btn {
       padding: 12px 25px; /* Increased padding */
       font-size: 1.1rem; /* Slightly larger font */
-      background-color: #1db954; /* Green background */
+      background-color: #1db954; /* Vibrant green button */
       color: white;
       border: none;
       border-radius: 10px; /* More rounded corners */
@@ -116,11 +121,17 @@
       max-width: 300px; /* Max width for buttons */
     }
 
-    .game-controls button:hover, .restart-btn:hover, .close-btn:hover, .sound-toggle-btn:hover {
+    .game-controls button:hover, .restart-btn:hover, .sound-toggle-btn:hover {
       background-color: #ff6f00; /* Orange on hover */
       transform: translateY(-3px) scale(1.05); /* Lift and slightly scale */
       box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Stronger shadow on hover */
     }
+     .close-btn:hover {
+         background-color: #c0392b; /* Darker red on hover */
+         transform: translateY(-3px) scale(1.05);
+         box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Stronger shadow on hover */
+     }
+
     .game-controls button:active, .restart-btn:active, .close-btn:active, .sound-toggle-btn:active {
       transform: translateY(-1px) scale(1.02); /* Slightly lower and less scale on click */
       box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
@@ -136,22 +147,13 @@
     .close-btn {
         background-color: #e74c3c; /* Reddish close button */
     }
-     .close-btn:hover {
-         background-color: #c0392b; /* Darker red on hover */
-         transform: translateY(-3px) scale(1.05);
-     }
-     .close-btn:active {
-        transform: translateY(-1px) scale(1.02);
-     }
+
 
      .sound-toggle-btn {
         background-color: #3498db; /* Blueish toggle button */
          margin-top: 10px; /* Add some space above it */
          max-width: 300px; /* Match other button max-width */
      }
-      .sound-toggle-btn:hover {
-          background-color: #2980b9; /* Darker blue */
-      }
 
 
     /* Bot Difficulty Selection */
@@ -169,27 +171,29 @@
         font-weight: bold;
         font-family: 'Bangers', cursive;
         font-size: 1.2rem;
-        color: #333;
+        color: #333; /* Dark text on light background */
     }
 
     .difficulty-selection select {
         padding: 10px;
         font-size: 1rem;
         border-radius: 8px;
-        border: 2px solid #1db954;
+        border: 2px solid #1db954; /* Vibrant green border */
         font-family: 'Segoe UI', 'Arial', sans-serif;
         background-color: #fff;
+        color: #333; /* Dark text */
         cursor: pointer;
         transition: border-color 0.3s ease;
         width: 100%; /* Match button width */
     }
 
     .difficulty-selection select:hover {
-        border-color: #ff6f00;
+        border-color: #ff6f00; /* Orange on hover */
     }
 
 
     /* --- Game Board --- */
+    /* Keeping the original board colors for visual contrast with symbols */
     .board {
       display: grid;
       grid-template-columns: repeat(7, 55px); /* Slightly larger cells */
@@ -241,6 +245,7 @@
 
 
     /* --- Board Cells --- */
+     /* Keeping original cell colors for contrast */
     .cell {
       width: 55px; /* Match grid size */
       height: 55px; /* Match grid size */
@@ -964,10 +969,21 @@
          }
 
         // Determine if human clicks should be allowed on the board container level
-        // Clicks are allowed on the board container only if a local game mode is active AND
-        // (it's PlayerVsPlayer mode) OR (it's Bot mode AND it's the human player's (X's) turn)
-        // If local_gameMode is '', the board container pointer-events will be 'none'.
+        /*
+        // Original logic based on mm_isMyTurn (online) and local_gameMode:
+        const canHumanClickOnBoardContainer =
+            // If in matchmaking AND it's my turn AND game is not over
+            (mm_roomId && mm_isMyTurn && !mm_onlineGameOver) ||
+            // OR if in local game mode ('player' or 'bot') AND game is not over AND (PvP OR (PvBot AND it's X's turn))
+            (local_gameMode !== '' && !local_gameOver && (local_gameMode === 'player' || (local_gameMode === 'bot' && local_currentTurnSymbol === PLAYER_X)));
+         */
+
+         // Simplified logic for local modes only:
+         // Clicks are allowed on the board container only if a local game mode is active AND
+         // game is NOT over AND (it's PlayerVsPlayer mode) OR (it's Bot mode AND it's the human player's (X's) turn)
+         // If local_gameMode is '', the board container pointer-events will be 'none'.
          const canHumanClickOnBoardContainer = local_gameMode !== '' && !local_gameOver && (local_gameMode === 'player' || (local_gameMode === 'bot' && local_currentTurnSymbol === PLAYER_X));
+
 
          boardElement.style.pointerEvents = canHumanClickOnBoardContainer ? 'auto' : 'none';
           console.log(`Local: Setting board pointer-events for human clicks to ${canHumanClickOnBoardContainer ? 'auto' : 'none'}. State: Mode=${local_gameMode || 'none'}, Turn=${local_currentTurnSymbol || 'none'}, GameOver=${local_gameOver}`); // Log clickability state
@@ -1131,8 +1147,11 @@
                  bestScore = evaluation;
                  bestMoveIndex = index;
              }
-             alpha = Math.max(alpha, evaluation); // Update alpha at the root
-             // No beta check needed at the root level of the initial call
+             alpha = Math.max(alpha, evaluation); // Update alpha
+             if (beta <= alpha) {
+                     // console.log("Minimax: Alpha-beta pruning branch cut (Maximizing)."); // Suppress logging
+                    break; // Alpha-beta pruning
+             }
          }
 
           // If no move resulted in a score change or if all moves lead to the same score,
@@ -1515,7 +1534,7 @@
 
                       // If we counted WIN_LENGTH symbols in a row and stayed in bounds
                       if (possible && count === W_check) {
-                          // console.log(`Winner found: ${playerSymbol} at r=${r}, c=${c} in direction dr=${direction.dr}, dc=${direction.dc}`); // Suppress excessive logging
+                          /* console.log(`Winner found: ${playerSymbol} at r=${r}, c=${c} in direction dr=${direction.dr}, dc=${direction.dc}`); // Suppress excessive logging during minimax simulation */
                           // Return the player and the winning cell indices
                           return { player: playerSymbol, combination: combination };
                       }
