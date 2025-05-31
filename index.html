@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale.0"/>
   <title>Gamyday TicTacToe - Funky!</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -147,6 +147,7 @@
      .sound-toggle-btn {
         background-color: #3498db; /* Blueish toggle button */
          margin-top: 10px; /* Add some space above it */
+         max-width: 300px; /* Match other button max-width */
      }
       .sound-toggle-btn:hover {
           background-color: #2980b9; /* Darker blue */
@@ -562,9 +563,17 @@
              soundToggleButton.addEventListener('click', toggleSound);
          }
 
-         // Configure close window button click handler
+         // --- FIX: Assign event listeners for persistent buttons unconditionally ---
+         // These buttons exist on the page throughout its lifecycle (though their container is hidden/shown)
+         // Their handlers should always be active.
+
+         if (restartButton) {
+             // The text is already correct "Restart Game!"
+             restartButton.onclick = requestRestartGame; // Assign the local restart function
+             console.log("Assigned onclick for restartButton.");
+         }
+
          if (closeWindowButton) {
-             // --- FIX: Call resetToModeSelection instead of window.close() ---
              closeWindowButton.onclick = () => {
                   console.log("Exit Game button clicked. Resetting to mode selection.");
 
@@ -578,15 +587,17 @@
                   // Note: window.close() is unreliable and removed here.
                   // If the user wants to truly close the browser tab/window, they must do it manually.
              };
-             // Ensure close button is visible by default
-             closeWindowButton.style.display = 'block';
+             console.log("Assigned onclick for closeWindowButton.");
          }
+         // --- END FIX ---
 
 
-         // Initially hide game end buttons container
+         // Initially hide game end buttons container (it's shown when local_gameOver becomes true)
          if(gameEndButtonsContainer) {
             gameEndButtonsContainer.style.display = 'none';
+            console.log("Initially hid gameEndButtonsContainer.");
          }
+
 
          // --- Initial Setup Based on State ---
          const urlParams = new URLSearchParams(window.location.search);
@@ -611,12 +622,6 @@
             // If a mode is specified (local game), start it.
             startGameMode(finalMode); // This function handles board display etc.
             document.body.classList.add('game-started'); // Add class
-
-            // Configure restart button text and action for local games
-             if (restartButton) {
-                 restartButton.textContent = 'Restart Game!';
-                 restartButton.onclick = requestRestartGame; // Assign the local restart function
-             }
 
          } else {
              // --- SHOWING MODE SELECTION (Default state) ---
@@ -673,17 +678,21 @@
         local_currentTurnSymbol = PLAYER_X; // X always starts local games
         local_gameOver = false;
         winningCombination = null; // Reset winning combination
+        console.log(`Local: Reset state. local_gameOver=${local_gameOver}`); // Log state after reset
+
 
          // --- Attempt to unlock audio playback using the user's click on the mode button ---
          // This is the best place to try and "unlock" audio using a direct user gesture.
-         // Only attempt if sound is supposed to be ON and audio element exists
+         // Only attempt if sound is supposed to be ON and audio element exists and this call was from a user click (not page load)
+         // We can't reliably detect if the call came from a user click or the initial load check,
+         // so the unlock attempt is also made in DOMContentLoaded.
+         // This attempt here reinforces it if the user clicked a button.
          if (isSoundOn && moveSound) {
-             console.log("Attempting audio unlock on mode button click...");
-             // Play at a very low volume, or even volume=0 if the browser allows that to unlock
-             moveSound.volume = 0.01;
-             moveSound.play()
-                 .then(() => { console.log("Audio unlock attempt successful from mode button click."); moveSound.volume = 1; moveSound.pause(); moveSound.currentTime = 0; }) // Restore volume, pause, and rewind if successful
-                 .catch(e => console.warn("Audio unlock attempt failed from mode button click (unexpected after click):", e));
+             console.log("Attempting audio unlock on startGameMode call (might be redundant if DOMContentLoaded worked)...");
+             moveSound.volume = 0.01; // Play at very low volume
+              moveSound.play()
+                  .then(() => { console.log("Audio unlock attempt successful from startGameMode."); moveSound.volume = 1; moveSound.pause(); moveSound.currentTime = 0; })
+                  .catch(e => console.warn("Audio unlock attempt failed from startGameMode:", e));
          }
 
 
@@ -711,11 +720,8 @@
              gameEndButtonsContainer.style.display = 'none';
               console.log("Local: Hiding game end buttons container."); // Log UI change
          }
-         // Ensure restart button text is correct for local game
-         if (restartButton) {
-              restartButton.textContent = 'Restart Game!';
-              // Event listener is set in DOMContentLoaded for local mode
-         }
+         // Restart button text is already "Restart Game!" for local mode (set in DOMContentLoaded)
+         // Close button text is already "Exit Game" for local mode (set in DOMContentLoaded)
 
 
          document.body.classList.add('game-started'); // Indicate game is active
@@ -744,6 +750,8 @@
         // Basic validation (should already be checked before calling this, but safety first)
         if (local_gameOver) {
              console.warn(`makeLocalMove: Game is over, cannot make move at ${index}.`);
+             // Ensure board is not clickable if somehow still active
+             enableLocalBoardClicking();
              return; // Do nothing if game is already over
         }
         if (local_cells[index] !== null) {
@@ -822,7 +830,6 @@
                  gameEndButtonsContainer.style.display = 'flex';
                   console.log("Local: makeLocalMove: Game over, showing gameEndButtonsContainer."); // Log UI change
              }
-             // Restart button text is already "Restart Game!" for local mode
 
              // Clickability will be disabled by enableLocalBoardClicking below because local_gameOver is true
         } else {
@@ -861,12 +868,13 @@
          // Primary checks: is game over? is cell taken?
          if (local_gameOver || local_cells[index] !== null) {
               console.log("Local Click: Game over or cell taken, ignoring click.");
-               if (statusMessageElement && local_cells[index] !== null) { // Only show message if cell is taken
+               if (statusMessageElement && local_cells[index] !== null && !local_gameOver) { // Only show message if cell is taken and game isn't over
                    // Capture the current status before briefly showing "Cell already taken!" message
                    const originalStatusText = statusMessageElement.textContent;
                     statusMessageElement.textContent = "Cell already taken!";
                     setTimeout(() => {
                         // Check if the status message is still the one we set before reverting
+                        // Avoid reverting if the status changed (e.g., game ended during the timeout)
                         if (statusMessageElement.textContent === "Cell already taken!") {
                            updateLocalGameStatus(); // Revert to actual game status
                         }
@@ -965,7 +973,7 @@
 
 
          // Update the 'clickable' class on individual cells for visual feedback (hover effect)
-         // This class is only applied if the *board container* is clickable *and* the cell is empty.
+         // This class is only applied if the *board container* is enabled for human clicks *and* the cell is empty.
          // This ensures cells aren't styled as clickable if the whole board is disabled (e.g., bot turn, game over, selection screen).
          const cells = boardElement.querySelectorAll('.cell');
           cells.forEach((cell, index) => {
@@ -977,7 +985,8 @@
                    cell.style.pointerEvents = 'auto'; // Ensure individual cell allows clicks if container does
                } else {
                    cell.classList.remove('clickable');
-                   cell.style.pointerEvents = 'none'; // Ensure individual cell blocks clicks if taken or board disabled
+                   // If cell is taken OR the board container is not clickable for humans, ensure this cell is also not clickable
+                   cell.style.pointerEvents = 'none';
                }
          });
          console.log("Local: Updated cell clickable classes/pointer-events."); // Log cell updates
@@ -1279,15 +1288,18 @@
                           }
 
                           // If the line segment isn't blocked and could potentially be completed (contains only player pieces and empty cells)
-                           if (!blocked && (playerCount + emptyCount) === WIN_LENGTH) {
+                           if (!blocked && (playerCount + emptyCount) >= WIN_LENGTH) { // Ensure enough spots total for a line
                                // Assign scores based on the number of player pieces in the potential line
                                // Prioritize lines with more pieces for the current player (bot)
                                // Weaker lines get lower scores.
                                // Note: Exact win (playerCount === WIN_LENGTH) is handled by the base case in minimax.
-                               if (playerCount === WIN_LENGTH - 1) { // e.g., 3 in a row for WIN_LENGTH=4
-                                   playerScore += SCORES.threeInARow;
-                               } else if (playerCount === WIN_LENGTH - 2) { // e.g., 2 in a row
-                                   playerScore += SCORES.twoInARow;
+                               if (playerCount === WIN_LENGTH - 1 && emptyCount >= 1) { // e.g., 3 in a row for WIN_LENGTH=4 with at least one empty spot
+                                   // Check if it's open on both ends (better) vs one end
+                                   const openEnds = countOpenEnds(board, r, c, direction.dr, direction.dc, WIN_LENGTH, playerTarget, opponentTarget);
+                                   playerScore += SCORES.threeInARow * openEnds; // Give more points for more open ends
+                               } else if (playerCount === WIN_LENGTH - 2 && emptyCount >= 2) { // e.g., 2 in a row
+                                   const openEnds = countOpenEnds(board, r, c, direction.dr, direction.dc, WIN_LENGTH, playerTarget, opponentTarget);
+                                   playerScore += SCORES.twoInARow * openEnds; // Give more points for more open ends
                                }
                                 // You could add more cases like playerCount === WIN_LENGTH-3 etc.
                            }
@@ -1297,6 +1309,38 @@
              return playerScore;
         }
 
+         // Helper to count how many ends of a potential line are open (not blocked by opponent or edge)
+         function countOpenEnds(board, r, c, dr, dc, length, playerTarget, opponentTarget) {
+              let openEnds = 0;
+
+              // Check cell before the start
+              const prevR = r - dr;
+              const prevC = c - dc;
+              if (prevR >= 0 && prevR < N && prevC >= 0 && prevC < N) {
+                  const prevIndex = prevR * N + prevC;
+                  if (board[prevIndex] !== opponentTarget) { // Not blocked by opponent
+                      openEnds++;
+                  }
+              } else {
+                   openEnds++; // Edge is considered open (or at least not blocked by opponent)
+              }
+
+               // Check cell after the end
+               const nextR = r + length * dr;
+               const nextC = c + length * dc;
+                if (nextR >= 0 && nextR < N && nextC >= 0 && nextC < N) {
+                   const nextIndex = nextR * N + nextC;
+                    if (board[nextIndex] !== opponentTarget) { // Not blocked by opponent
+                       openEnds++;
+                    }
+                } else {
+                   openEnds++; // Edge is considered open
+               }
+
+              return openEnds;
+         }
+
+
         // Calculate potential scores for bot (maximizing) and opponent (minimizing)
         const botPotentialScore = countPotentialLines(board, mySymbol);
         const opponentPotentialScore = countPotentialLines(board, opponentSymbol);
@@ -1304,16 +1348,17 @@
         // The heuristic score is the difference between bot's potential and opponent's potential
         score = botPotentialScore - opponentPotentialScore;
 
-         // Add a preference for center columns (optional heuristic)
+         // Add a preference for center columns (optional heuristic) - simplified
          const centerCol = Math.floor(N / 2);
-         for (let r = 0; r < N; r++) {
-              const index = r * N + centerCol;
-              if (board[index] === mySymbol) {
-                  score += SCORES.centerPreference;
-              } else if (board[index] === opponentSymbol) {
-                  score -= SCORES.centerPreference;
-              }
-         }
+          for (let r = 0; r < N; r++) {
+               const index = r * N + centerCol;
+                if (board[index] === mySymbol) {
+                   score += SCORES.centerPreference;
+               } else if (board[index] === opponentSymbol) {
+                   score -= SCORES.centerPreference;
+               }
+           }
+
 
         // console.log("Minimax Evaluation Score:", score); // Suppress logging
         return score;
