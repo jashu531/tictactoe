@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Gamyday TicTacToe - Funky!</title>
+  <title>Tic 4 Toe!</title> <!-- Updated title -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Bangers&display=swap" rel="stylesheet">
@@ -353,7 +353,8 @@
 </head>
 <body>
   <div class="game-container">
-    <div class="branding">Gamyday <span>Funky Game!</span></div>
+    <!-- Updated Branding -->
+    <div class="branding">Tic <span>4</span> Toe!</div>
     <div class="status-message" id="statusMessage">Loading Game...</div>
 
     <!-- Player vs Player (Local) and Player vs Bot buttons -->
@@ -505,7 +506,7 @@
 
          // If sound is just turned ON, attempt a silent play unlock
          // This helps browsers allow audio playback triggered by non-direct user gestures later.
-         // Only attempt if audio element exists and sound is now ON
+         // Only attempt if sound is supposed to be ON and audio element exists and sound is now ON
           if (isSoundOn && moveSound) {
                console.log("Attempting silent play unlock after turning sound ON...");
                // Temporarily set volume very low
@@ -563,7 +564,7 @@
              soundToggleButton.addEventListener('click', toggleSound);
          }
 
-         // --- FIX: Assign event listeners for persistent buttons unconditionally ---
+         // --- Assign event listeners for persistent buttons unconditionally ---
          // These buttons exist on the page throughout its lifecycle (though their container is hidden/shown)
          // Their handlers should always be active.
 
@@ -1367,11 +1368,11 @@
 
     // Initiates a restart for the local game mode or resets to selection
     function requestRestartGame() {
-        console.log(">>> requestRestartGame FUNCTION TRIGGERED <<<"); // Added log
+        console.log(">>> requestRestartGame FUNCTION TRIGGERED <<<"); // Added prominent log
         console.log("requestRestartGame called (Restart Game button clicked)."); // Log button click
 
         // Logic for restarting local game mode
-        if (local_gameMode) {
+        if (local_gameMode) { // Checks if currently in a local game mode ('player' or 'bot')
             console.log(`Local: Restarting mode: ${local_gameMode}`); // Log which mode is restarting
             // Clear winning combination and re-call startGameMode with the current mode
             winningCombination = null; // Clear highlight
