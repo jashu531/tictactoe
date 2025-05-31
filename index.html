@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Gamyday TicTacToe - Funky!</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -718,7 +718,7 @@
         // Ensure game end buttons container is hidden at the start of a new game
          if (gameEndButtonsContainer) {
              gameEndButtonsContainer.style.display = 'none';
-              console.log("Local: Hiding game end buttons container."); // Log UI change
+              console.log("Local: startGameMode: Hiding game end buttons container."); // Add this log
          }
          // Restart button text is already "Restart Game!" for local mode (set in DOMContentLoaded)
          // Close button text is already "Exit Game" for local mode (set in DOMContentLoaded)
@@ -828,7 +828,7 @@
              // Show the game end buttons container
              if (gameEndButtonsContainer) {
                  gameEndButtonsContainer.style.display = 'flex';
-                  console.log("Local: makeLocalMove: Game over, showing gameEndButtonsContainer."); // Log UI change
+                  console.log("Local: makeLocalMove: Game over, showing game end buttons container."); // Log UI change
              }
 
              // Clickability will be disabled by enableLocalBoardClicking below because local_gameOver is true
@@ -1367,6 +1367,7 @@
 
     // Initiates a restart for the local game mode or resets to selection
     function requestRestartGame() {
+        console.log(">>> requestRestartGame FUNCTION TRIGGERED <<<"); // Added log
         console.log("requestRestartGame called (Restart Game button clicked)."); // Log button click
 
         // Logic for restarting local game mode
