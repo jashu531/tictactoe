@@ -60,7 +60,6 @@
       /* Vibrant border matching website accents */
       border: 5px solid #1db954; /* Vibrant green border */
       color: #333; /* Dark text inside container */
-      box-sizing: border-box; /* Include padding and border in element's total width/height */
     }
 
     /* --- Branding --- */
@@ -197,8 +196,8 @@
     /* Keeping the original board colors for visual contrast with symbols */
     .board {
       display: grid;
-      grid-template-columns: repeat(7, 55px); /* Desktop: Slightly larger cells */
-      grid-template-rows: repeat(7, 55px); /* Desktop: Slightly larger cells */
+      grid-template-columns: repeat(7, 55px); /* Slightly larger cells */
+      grid-template-rows: repeat(7, 55px); /* Slightly larger cells */
       gap: 6px; /* Increased gap */
       background-color: #4a235a; /* Dark purple background */
       padding: 10px; /* Increased padding */
@@ -207,39 +206,20 @@
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); /* Add shadow */
       /* Initially hidden, JS shows it */
       display: none; /* <-- Hide by default */
-      box-sizing: border-box; /* Include padding and border */
-      margin-left: auto; /* Center the board if it's narrower than container */
-      margin-right: auto;
-      /* Added max-width for desktop to ensure it respects container */
-      max-width: 100%;
     }
 
     /* Responsive adjustment for smaller screens */
     @media (max-width: 420px) {
-        /* FIX: Increase padding on the container itself to add space on sides */
-        .game-container {
-             padding: 20px 10px; /* Top/bottom 20px, left/right 10px */
-        }
-
          .board {
-             /* FIX: Use fixed cell sizes as requested, but ensure they fit */
-             /* grid-template-columns and grid-template-rows will use cell width/height */
-             grid-template-columns: repeat(7, 40px); /* Mobile: Smaller cells */
-             grid-template-rows: repeat(7, 40px); /* Mobile: Smaller cells */
-             gap: 4px; /* Slightly smaller gap */
-             padding: 5px; /* Reduced padding */
-             /* Ensure board can shrink if needed, though fixed cell size dominates */
-             width: auto; /* Let grid content define width */
-             max-width: 100%; /* Prevent overflow relative to the container's content area */
+             grid-template-columns: repeat(7, 40px); /* Smaller cells */
+             grid-template-rows: repeat(7, 40px); /* Smaller cells */
+             gap: 4px;
+             padding: 5px;
          }
          .cell {
-             /* Mobile: Match grid size */
              width: 40px;
              height: 40px;
-             font-size: 1.2rem; /* Adjust font size */
-              /* min-width/height added defensively */
-             min-width: 0;
-             min-height: 0;
+             font-size: 1.2rem;
          }
          .branding {
             font-size: 2em;
@@ -251,6 +231,9 @@
          .game-controls button, .restart-btn, .close-btn, .sound-toggle-btn {
              font-size: 0.9rem;
              padding: 10px 15px;
+         }
+         .game-container {
+             padding: 20px;
          }
           .difficulty-selection {
              max-width: 250px; /* Adjust for smaller screen */
@@ -264,9 +247,8 @@
     /* --- Board Cells --- */
      /* Keeping original cell colors for contrast */
     .cell {
-      /* Desktop size is defined here */
-      width: 55px;
-      height: 55px;
+      width: 55px; /* Match grid size */
+      height: 55px; /* Match grid size */
       background-color: #3498db; /* Vibrant blue */
       display: flex;
       justify-content: center;
@@ -1527,7 +1509,7 @@
                       let possible = true; // Assume it's a possible line for this player until proven otherwise
 
                       // Check WIN_LENGTH cells in this direction
-                      for (let k = 0; k < W_LENGTH; k++) {
+                      for (let k = 0; k < W_check; k++) {
                           const currRow = r + k * direction.dr;
                           const currCol = c + k * direction.dc;
                           const currIndex = currRow * N_check + currCol;
@@ -1551,7 +1533,7 @@
                       }
 
                       // If we counted WIN_LENGTH symbols in a row and stayed in bounds
-                      if (possible && count === W_LENGTH) {
+                      if (possible && count === W_check) {
                           /* console.log(`Winner found: ${playerSymbol} at r=${r}, c=${c} in direction dr=${direction.dr}, dc=${direction.dc}`); // Suppress excessive logging during minimax simulation */
                           // Return the player and the winning cell indices
                           return { player: playerSymbol, combination: combination };
@@ -1601,10 +1583,8 @@
         // Clear existing cells from the DOM
         boardElement.innerHTML = '';
          // Set grid dimensions based on N (redundant if in CSS, but safe)
-         // CSS media query handles the specific sizes for mobile vs desktop.
-         boardElement.style.gridTemplateColumns = `repeat(${N}, auto)`; /* Default/Desktop size from .cell */
-         boardElement.style.gridTemplateRows = `repeat(${N}, auto)`; /* Default/Desktop size from .cell */
-
+         boardElement.style.gridTemplateColumns = `repeat(${N}, auto)`; // Use auto to let cell width define column size
+         boardElement.style.gridTemplateRows = `repeat(${N}, auto)`;
 
         // Validate input board state
         if (!boardToRender || !Array.isArray(boardToRender) || boardToRender.length !== N * N) {
