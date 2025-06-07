@@ -60,6 +60,8 @@
       /* Vibrant border matching website accents */
       border: 5px solid #1db954; /* Vibrant green border */
       color: #333; /* Dark text inside container */
+      /* Added box-sizing for better padding/border handling */
+      box-sizing: border-box;
     }
 
     /* --- Branding --- */
@@ -206,20 +208,33 @@
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); /* Add shadow */
       /* Initially hidden, JS shows it */
       display: none; /* <-- Hide by default */
+      /* Added box-sizing for board padding/border */
+      box-sizing: border-box;
+      /* Added margin auto to center if it's smaller than container */
+      margin-left: auto;
+      margin-right: auto;
     }
 
     /* Responsive adjustment for smaller screens */
     @media (max-width: 420px) {
          .board {
-             grid-template-columns: repeat(7, 40px); /* Smaller cells */
-             grid-template-rows: repeat(7, 40px); /* Smaller cells */
-             gap: 4px;
-             padding: 5px;
+             /* FIX: Use flexible units (fr) for columns/rows */
+             grid-template-columns: repeat(7, 1fr); /* Columns take equal fractions of available space */
+             grid-template-rows: repeat(7, 1fr); /* Rows take equal fractions of available space (makes cells square) */
+             gap: 4px; /* Slightly smaller gap */
+             padding: 5px; /* Reduced padding */
+             /* FIX: Ensure board shrinks to fit container */
+             width: 100%; /* Try to fill container */
+             max-width: 100%; /* Don't exceed container's width */
          }
          .cell {
-             width: 40px;
-             height: 40px;
-             font-size: 1.2rem;
+             /* FIX: Remove fixed width/height, let grid define size */
+             /* width: 40px; */
+             /* height: 40px; */
+             font-size: 1.2rem; /* Adjust font size */
+              /* Added min-width/height to prevent potential grid issues */
+             min-width: 0;
+             min-height: 0;
          }
          .branding {
             font-size: 2em;
@@ -233,7 +248,7 @@
              padding: 10px 15px;
          }
          .game-container {
-             padding: 20px;
+             padding: 20px; /* Reduced padding */
          }
           .difficulty-selection {
              max-width: 250px; /* Adjust for smaller screen */
@@ -247,6 +262,7 @@
     /* --- Board Cells --- */
      /* Keeping original cell colors for contrast */
     .cell {
+      /* These values are for desktop/larger screens */
       width: 55px; /* Match grid size */
       height: 55px; /* Match grid size */
       background-color: #3498db; /* Vibrant blue */
@@ -1583,8 +1599,11 @@
         // Clear existing cells from the DOM
         boardElement.innerHTML = '';
          // Set grid dimensions based on N (redundant if in CSS, but safe)
-         boardElement.style.gridTemplateColumns = `repeat(${N}, auto)`; // Use auto to let cell width define column size
-         boardElement.style.gridTemplateRows = `repeat(${N}, auto)`;
+         // NOTE: For responsiveness, the actual column/row sizing is now handled by the @media query CSS using 'fr' units
+         // The 'auto' here serves as a default for desktop if the media query doesn't apply.
+         boardElement.style.gridTemplateColumns = `repeat(${N}, auto)`; // Use auto to let cell size define column size by default
+         boardElement.style.gridTemplateRows = `repeat(${N}, auto)`; // Use auto to let cell size define row size by default
+
 
         // Validate input board state
         if (!boardToRender || !Array.isArray(boardToRender) || boardToRender.length !== N * N) {
